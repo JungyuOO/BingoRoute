@@ -18,3 +18,8 @@
 
 ---
 ###  구현 기술
+
+
+---
+### 프로토타입 예시
+<img width="1232" height="686" alt="Image" src="https://github.com/user-attachments/assets/445c0d9d-9cc6-429a-b023-1fc386810fd9" />
