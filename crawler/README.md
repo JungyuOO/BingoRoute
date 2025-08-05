@@ -1,3 +1,5 @@
+## pip install uv 후 venv 가상환경 접속 후 requirements.txt 파일 순차적으로 실행
+
 ## BaseCrawler
     -> 공통 크롤링 로직(페이지 가져오기, 텍스트 정렬 등)
     -> extract_travel_info 는 inherit 클래스에서 구현하도록 강제 지정
