@@ -1,0 +1,2 @@
+contentid	title	areacode	addr	creationtime	modifiedtime	sigungucode	cat1	cat2	cat3	mapx	mapy	tel	zipcode
+128587	청학동 명륜학당	36	경상남도 하동군 청암면 청학로 2359-12	20050915090000	20240522105503	18	A02	A0206	A02061400	127.7244342255	35.2352899017		52309

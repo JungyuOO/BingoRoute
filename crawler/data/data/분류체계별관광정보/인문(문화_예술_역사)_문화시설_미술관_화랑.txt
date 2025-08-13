@@ -1,0 +1,2 @@
+contentid	title	areacode	addr	creationtime	modifiedtime	sigungucode	cat1	cat2	cat3	mapx	mapy	tel	zipcode
+2718737	트릭아트스토리	2	인천광역시 중구 동화마을길 42 (송월동3가)	20210528014754	20240704103839	10	A02	A0206	A02060500	126.6207394716	37.4776859887		22311

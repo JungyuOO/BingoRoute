@@ -1,0 +1,2 @@
+contentid	title	areacode	addr	creationtime	modifiedtime	sigungucode	cat1	cat2	cat3	mapx	mapy	tel	zipcode
+2717294	거제시관광기념품조합	36	경상남도 거제시 탑곡로 92	20210515004952	20230901132735	1	A04	A0401	A04010900	128.6906955924	34.8640987518	010-2915-3381	53304

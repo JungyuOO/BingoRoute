@@ -1,0 +1,2 @@
+contentid	title	areacode	addr	creationtime	modifiedtime	sigungucode	cat1	cat2	cat3	mapx	mapy	tel	zipcode
+2432831	스몹 하남	31	경기도 하남시 미사대로 750 스타필드 하남	20161005231355	20240729161328	30	A03	A0302	A03020200	127.2237576241	37.5454888917		12942

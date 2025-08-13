@@ -1,0 +1,2 @@
+contentid	title	areacode	addr	creationtime	modifiedtime	sigungucode	cat1	cat2	cat3	mapx	mapy	tel	zipcode
+2946109	손놀림공방	1	서울특별시 종로구 이화동 9-901	20230128201138	20240816094849	23	A04	A0401	A04010700	127.0079541244	37.5779590034		03088
