@@ -34,6 +34,8 @@ def fetch_lcls_systm_codes():
             lcls_systm3_nm = item.findtext("lclsSystm3Nm", "")
             code = item.findtext("code", "")
             name = item.findtext("name", "")
+            rnum = item.findtext("rnum", "")
+
             
             categories.append({
                 "lclsSystm1Cd": lcls_systm1_cd,
@@ -44,6 +46,7 @@ def fetch_lcls_systm_codes():
                 "lclsSystm3Nm": lcls_systm3_nm,
                 "code": code,
                 "name": name
+                "rnum": rnum
             })
             
     except Exception as e:
