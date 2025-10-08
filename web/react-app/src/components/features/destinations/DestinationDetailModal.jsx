@@ -1,8 +1,9 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from '../../ui'
 import { useAuth } from '../../../hooks/api/useAuth'
 import { useNavigate } from 'react-router-dom'
+import { useStore } from '../../../context/StoreContext'
 import './DestinationDetailModal.css'
 
 const DestinationDetailModal = ({
@@ -15,135 +16,146 @@ const DestinationDetailModal = ({
 }) => {
   const { isAuthenticated, promptLogin } = useAuth()
   const navigate = useNavigate()
-  useEffect(() => {
-    if (!isOpen) return
+  const [showPlanModal, setShowPlanModal] = useState(false)
+  const { addDestinationToTrip, trips } = useStore()
 
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        onClose()
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown)
-
-    const { overflow } = document.body.style
-    document.body.style.overflow = 'hidden'
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-      document.body.style.overflow = overflow
-    }
-  }, [isOpen, onClose])
-
-  if (!isOpen || typeof document === 'undefined') {
-    return null
-  }
-
-  const handleBackdropClick = () => {
-    onClose()
-  }
-
-  const handleContentClick = (event) => {
-    event.stopPropagation()
-  }
-
-  const handleToggleSave = () => {
-    onToggleSave()
-  }
-
+  // 🔹 로그인 안 돼있으면 로그인 유도
   const handlePlannerAdd = () => {
-    if (!isAuthenticated) return promptLogin()
-    navigate('/planner')
+    if (!isAuthenticated) {
+      promptLogin()
+      return
+    }
+    setShowPlanModal(true) // ✅ 여행 계획 선택창만 띄움
+  }
+
+  // 🔹 모달 닫기
+  const handleBackdropClick = () => onClose()
+  const handleContentClick = (event) => event.stopPropagation()
+
+  // 🔹 여행계획 선택 시 실행
+  const handleSelectPlan = (planId) => {
+    const selectedPlan = trips.find(p => p.id === Number(planId))
+    if (!selectedPlan) return alert('선택한 여행 계획을 찾을 수 없습니다.')
+
+    addDestinationToTrip(selectedPlan.title, destination.name)
+    alert(`"${selectedPlan.title}" 여행 계획에 "${destination.name}"이(가) 추가되었습니다!`)
+    setShowPlanModal(false)
     onClose()
   }
+
+  // 🔹 새 여행 계획 생성
+  const handleCreateNewPlan = () => {
+    const title = prompt('새 여행 계획의 이름을 입력하세요 ✏️')
+    if (!title) return
+    addDestinationToTrip(title, destination.name)
+    alert(`"${title}" 여행 계획이 생성되고 "${destination.name}"이(가) 추가되었습니다!`)
+    setShowPlanModal(false)
+    onClose()
+  }
+
+  if (!isOpen || typeof document === 'undefined') return null
+  const modalRoot = document.getElementById('modal-root') || document.body
 
   return createPortal(
-    <div className="destination-modal__backdrop" onClick={handleBackdropClick}>
-      <div className="destination-modal" role="dialog" aria-modal="true" onClick={handleContentClick}>
-        <div className="destination-modal__header">
-          <button type="button" className="destination-modal__close" onClick={onClose} aria-label="닫기">
-            ×
-          </button>
-        </div>
-
-        <div className="destination-modal__content">
-          {/* Hero Section */}
-          <div className="modal-hero">
-            <div className="modal-hero__tags">
-              {destination.tags?.map(tag => (
-                <span key={tag} className="modal-tag">{tag}</span>
-              ))}
-            </div>
-            <h2 className="modal-hero__title">{destination.name}</h2>
-            <p className="modal-hero__meta">
-              📍{destination.area} · ⭐ {destination.rating}
-            </p>
-          </div>
-
-          {/* Detail Section */}
-          <div className="modal-section">
-            <h3>상세 정보</h3>
-            <p>{destination.long || destination.short}</p>
-          </div>
-
-          {/* Visit Info Section */}
-          <div className="modal-section">
-            <h3>방문 정보</h3>
-            <div className="modal-info-grid">
-              <div>
-                <strong>전화번호</strong>
-                <p>{destination.phone || '정보 없음'}</p>
-              </div>
-              <div>
-                <strong>휴무일</strong>
-                <p>{destination.closedDays || '정보 없음'}</p>
-              </div>
-              <div>
-                <strong>운영시간</strong>
-                <p>{destination.operatingHours || '정보 없음'}</p>
-              </div>
-              <div>
-                <strong>운영계절</strong>
-                <p>{destination.operatingSeason || '정보 없음'}</p>
-              </div>
-              <div>
-                <strong>주차장</strong>
-                <p>{destination.parking ? '이용 가능' : '이용 불가'}</p>
-              </div>
-              <div>
-                <strong>유모차</strong>
-                <p>{destination.strollerFriendly ? '이용 가능' : '이용 불가'}</p>
-              </div>
-              <div>
-                <strong>반려동물 입장</strong>
-                <p>{destination.petFriendly ? '입장 가능' : '입장 불가'}</p>
-              </div>
-              <div>
-                <strong>신용카드</strong>
-                <p>{destination.creditCard ? '사용 가능' : '사용 불가'}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="destination-modal__actions">
-            <Button
-              variant="ghost"
-              onClick={handleToggleSave}
+    (
+      <div
+        className="destination-modal__backdrop"
+        onClick={handleBackdropClick}
+      >
+        <div className="destination-modal" role="dialog" aria-modal="true" onClick={handleContentClick}>
+          <div className="destination-modal__header">
+            <button
               type="button"
-              disabled={!isAuthenticated}
-              title={!isAuthenticated ? '로그인 후 이용해주세요' : ''}
+              className="destination-modal__close"
+              onClick={onClose}
+              aria-label="닫기"
             >
-              {isSaved ? '찜 해제' : '찜하기'}
-            </Button>
-            <Button variant="primary" onClick={handlePlannerAdd} type="button">
-              여행 계획에 추가하기
-            </Button>
+              ×
+            </button>
+          </div>
+
+          <div className="destination-modal__content">
+            <div className="modal-hero">
+              <div className="modal-hero__tags">
+                {destination.tags?.map(tag => (
+                  <span key={tag} className="modal-tag">{tag}</span>
+                ))}
+              </div>
+              <h2 className="modal-hero__title">{destination.name}</h2>
+              <p className="modal-hero__meta">
+                📍{destination.area} · ⭐ {destination.rating}
+              </p>
+            </div>
+
+            <div className="modal-section">
+              <h3>상세 정보</h3>
+              <p>{destination.long || destination.short}</p>
+            </div>
+
+            <div className="modal-section">
+              <h3>방문 정보</h3>
+              <div className="modal-info-grid">
+                <div><strong>전화번호</strong><p>{destination.phone || '정보 없음'}</p></div>
+                <div><strong>휴무일</strong><p>{destination.closedDays || '정보 없음'}</p></div>
+                <div><strong>운영시간</strong><p>{destination.operatingHours || '정보 없음'}</p></div>
+                <div><strong>운영계절</strong><p>{destination.operatingSeason || '정보 없음'}</p></div>
+                <div><strong>주차장</strong><p>{destination.parking ? '이용 가능' : '이용 불가'}</p></div>
+                <div><strong>유모차</strong><p>{destination.strollerFriendly ? '이용 가능' : '이용 불가'}</p></div>
+                <div><strong>반려동물 입장</strong><p>{destination.petFriendly ? '입장 가능' : '입장 불가'}</p></div>
+                <div><strong>신용카드</strong><p>{destination.creditCard ? '사용 가능' : '사용 불가'}</p></div>
+              </div>
+            </div>
+
+            <div className="destination-modal__actions">
+              <Button variant="ghost" onClick={onToggleSave}>
+                {isSaved ? '찜 해제' : '찜하기'}
+              </Button>
+              <Button variant="primary" onClick={handlePlannerAdd}>
+                여행 계획에 추가하기
+              </Button>
+            </div>
           </div>
         </div>
+
+        {/* ✅ 여행 계획 선택 모달 */}
+        {showPlanModal && (
+          <div className="plan-select-modal__backdrop" onClick={() => setShowPlanModal(false)}>
+            <div className="plan-select-modal" onClick={(e) => e.stopPropagation()}>
+              <h3>여행 계획에 추가하기</h3>
+              {trips.length > 0 ? (
+                <select
+                  className="dropdown-select"
+                  onChange={(e) => handleSelectPlan(e.target.value)}
+                  defaultValue="none"
+                >
+                  <option value="none" disabled>여행 계획을 선택하세요</option>
+                  {trips.map(plan => (
+                    <option key={plan.id} value={plan.id}>{plan.title}</option>
+                  ))}
+                </select>
+              ) : (
+                <p>저장된 여행 계획이 없습니다.</p>
+              )}
+              <Button
+                variant="primary"
+                onClick={handleCreateNewPlan}
+                style={{ marginTop: '20px', width: '100%' }}
+              >
+                + 새 여행 계획 만들기
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setShowPlanModal(false)}
+                style={{ marginTop: '8px', width: '100%' }}
+              >
+                닫기
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
-    </div>,
-    document.body
+    ),
+    modalRoot
   )
 }
 

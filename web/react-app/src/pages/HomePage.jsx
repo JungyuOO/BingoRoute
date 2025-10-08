@@ -41,7 +41,7 @@ const HomePage = () => {
   }, [])
 
   const handleStartPlanning = () => {
-    if (!isAuthenticated) return promptLogin()
+    // if (!isAuthenticated) return promptLogin() // ⭐ 삭제 : 비회원 접속 가능하도록 수정
     navigate('/planner')
   }
 

@@ -2,12 +2,18 @@ import { useState } from 'react'
 import './MyPageView.css'
 import '../components/features/destinations/Destinations.css'
 import DestinationCard from '../components/features/destinations/DestinationCard'
+import TripDetailModal from '../components/features/trips/TripDetailModal'
 import { useStore } from '../context/StoreContext'
 import { DESTINATIONS } from '../data/destinations'
 
 const MyPageView = () => {
-  const { session, setSession, wishlist, trips } = useStore()
+  const { session, setSession, wishlist, trips, removeDestinationFromTrip, deleteTrip, mergeTrips, updateTrip } = useStore()
   const [isEditing, setIsEditing] = useState(false)
+  const [isTripModalOpen, setIsTripModalOpen] = useState(false)
+  const [selectedTrip, setSelectedTrip] = useState(null)
+  const [editingTripId, setEditingTripId] = useState(null)
+  const [mergeTarget, setMergeTarget] = useState('')
+  const [mergeSource, setMergeSource] = useState('')
   const [editForm, setEditForm] = useState({
     name: session?.name || session?.first_name || '',
     email: session?.email || ''
@@ -83,6 +89,67 @@ const MyPageView = () => {
     if (score >= 60) return '괜찮은 날씨'
     if (score >= 50) return '보통 날씨'
     return '주의가 필요한 날씨'
+  }
+
+  const formatDateRange = (trip) => {
+    const { startDate, endDate } = trip || {}
+    if (!startDate && !endDate) return '날짜 미정'
+    if (startDate && !endDate) return startDate
+    if (!startDate && endDate) return endDate
+    return `${startDate} ~ ${endDate}`
+  }
+
+  const getTripStatus = (trip) => {
+    const today = new Date().toISOString().slice(0,10)
+    const start = trip?.startDate || null
+    const end = trip?.endDate || null
+    if (!start && !end) return null
+    // Only start
+    if (start && !end) {
+      if (today < start) return '예정'
+      if (today === start) return '여행중'
+      return '완료'
+    }
+    // Only end
+    if (!start && end) {
+      if (today < end) return '예정'
+      if (today === end) return '여행중'
+      return '완료'
+    }
+    // Both start and end
+    if (today < start) return '예정'
+    if (today > end) return '완료'
+    return '여행중'
+  }
+
+  const shareTrip = async (trip) => {
+    const names = (trip.destinations || trip.routes || []).map(d => {
+      const m = DESTINATIONS.find(x => x.id === d || x.name === d)
+      return m?.name || d
+    })
+    const text = `여행 계획: ${trip.title}\n기간: ${formatDateRange(trip)}\n경로: ${names.join(' > ')}`
+    const url = `${window.location.origin}/mypage?trip=${encodeURIComponent(trip.id)}`
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: trip.title, text, url })
+      } else {
+        await navigator.clipboard.writeText(`${text}\n${url}`)
+        alert('공유 링크가 클립보드에 복사되었습니다!')
+      }
+    } catch (e) {
+      console.error(e)
+      alert('공유 중 오류가 발생했어요.')
+    }
+  }
+
+  const openTripModal = (trip) => {
+    setSelectedTrip(trip)
+    setIsTripModalOpen(true)
+  }
+
+  const closeTripModal = () => {
+    setIsTripModalOpen(false)
+    setSelectedTrip(null)
   }
 
   return (
@@ -170,57 +237,86 @@ const MyPageView = () => {
 
       <div className="section">
         <h3>나의 여행 계획 ({trips.length})</h3>
+        {trips.length > 1 && (
+          <div className="merge-row" style={{display:'flex',gap:8,alignItems:'center',margin:'8px 0 16px'}}>
+            <span className="muted" style={{minWidth:72}}>계획 병합</span>
+            <select className="form-input" value={mergeTarget} onChange={(e)=>setMergeTarget(e.target.value)} style={{maxWidth:220}}>
+              <option value="">대상 선택</option>
+              {trips.map(t => <option key={t.id} value={t.id}>{t.title || '여행 계획'}</option>)}
+            </select>
+            <span>⬅︎</span>
+            <select className="form-input" value={mergeSource} onChange={(e)=>setMergeSource(e.target.value)} style={{maxWidth:220}}>
+              <option value="">합칠 계획</option>
+              {trips.map(t => <option key={t.id} value={t.id}>{t.title || '여행 계획'}</option>)}
+            </select>
+            <button className="btn-save" onClick={()=>{
+              if (!mergeTarget || !mergeSource || mergeTarget===mergeSource) return alert('서로 다른 두 계획을 선택하세요.')
+              mergeTrips(mergeTarget, [mergeSource])
+              setMergeTarget('')
+              setMergeSource('')
+              alert('계획을 병합했습니다.')
+            }}>병합</button>
+          </div>
+        )}
         {trips.length > 0 ? (
           <div className="trip-list">
             {trips.map((trip, index) => (
-              <div key={index} className="trip-card">
-                <div className="trip-header">
+              <div
+                key={index}
+                className="trip-button"
+                style={{position:'relative'}}
+                role="button"
+                tabIndex={0}
+                onClick={() => openTripModal(trip)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openTripModal(trip) } }}
+              >
+                <div className="trip-button-header">
                   <div>
-                    <strong>{trip.title || `여행 계획 ${index + 1}`}</strong>
-                    <div className="trip-meta">
-                      <span className="trip-date">{trip.date || '날짜 미정'}</span>
-                      {trip.weatherScore && (
-                        <span className={`weather-score ${getWeatherScoreClass(trip.weatherScore)}`}>
-                          날씨 점수: {trip.weatherScore}점
-                        </span>
-                      )}
+                    <div className="trip-button-title">{trip.title || `여행 계획 ${index + 1}`}</div>
+                    <div className="trip-button-meta">
+                      <span>{formatDateRange(trip)}</span>
                     </div>
                   </div>
-                  {trip.weatherScore && (
-                    <div className="score-badge">
-                      {trip.weatherScore}
+                  <div style={{display:'flex',gap:8, alignItems:'center'}}>
+                    {(() => {
+                      const status = getTripStatus(trip)
+                      if (!status) return null
+                      const cls = status === '예정' ? 'planned' : status === '여행중' ? 'ongoing' : 'done'
+                      return <span className={`status-badge ${cls}`}>{status}</span>
+                    })()}
+                  </div>
+                </div>
+                <div className="trip-button-content">
+                  <div className="trip-destinations">
+                    {(trip.destinations || trip.routes || []).length > 0 ? (
+                      (trip.destinations || trip.routes).map((d, i) => {
+                        const dest = DESTINATIONS.find(x => x.id === d || x.name === d)
+                        return (
+                          <span key={`${d}-${i}`} className="destination-tag" style={{display:'inline-flex',alignItems:'center',gap:6}}>
+                            {dest?.name || d}
+                            {editingTripId===trip.id && (
+                              <button className="btn-cancel" onClick={(e)=> { e.stopPropagation(); removeDestinationFromTrip(trip.id, d) }} style={{padding:'0 6px'}}>×</button>
+                            )}
+                          </span>
+                        )
+                      })
+                    ) : (
+                      <span className="weather-message-small">경로 없음</span>
+                    )}
+                  </div>
+                  <div className="trip-actions-row">
+                    <button className="btn-edit" onClick={(e)=> { e.stopPropagation(); setEditingTripId(editingTripId===trip.id ? null : trip.id) }}>{editingTripId===trip.id ? '수정 완료' : '수정하기'}</button>
+                    <button className="btn-share" onClick={(e)=> { e.stopPropagation(); shareTrip(trip) }}>공유하기</button>
+                  </div>
+                  {editingTripId===trip.id && (
+                    <div style={{display:'flex',gap:8,marginTop:8}}>
+                      <button className="btn-cancel" onClick={(e)=> { e.stopPropagation(); deleteTrip(trip.id) }}>여행 삭제</button>
                     </div>
                   )}
-                </div>
-
-                <div className="trip-details">
-                  <div className="trip-info-grid">
-                    <div className="trip-info-item">
-                      <span className="info-label">기간</span>
-                      <span className="info-value">{trip.duration || '미정'}</span>
-                    </div>
-                    <div className="trip-info-item">
-                      <span className="info-label">여행 스타일</span>
-                      <span className="info-value">{trip.style || '미정'}</span>
-                    </div>
-                    <div className="trip-info-item">
-                      <span className="info-label">예산</span>
-                      <span className="info-value">{trip.budget || '미정'}</span>
-                    </div>
-                    <div className="trip-info-item">
-                      <span className="info-label">동행</span>
-                      <span className="info-value">{trip.companions || '미정'}</span>
-                    </div>
-                  </div>
-
-                  {trip.weatherScore && (
-                    <div className="weather-recommendation">
-                      <span className="weather-icon">
-                        {getWeatherIcon(trip.weatherScore)}
-                      </span>
-                      <span className="weather-message">
-                        {getWeatherMessage(trip.weatherScore)}
-                      </span>
+                  {editingTripId===trip.id && (
+                    <div className="dates-row">
+                      <label>시작일<input type="date" value={trip.startDate || ''} onClick={(e)=> e.stopPropagation()} onChange={(e)=> updateTrip(trip.id, { startDate: e.target.value })} /></label>
+                      <label>종료일<input type="date" value={trip.endDate || ''} onClick={(e)=> e.stopPropagation()} onChange={(e)=> updateTrip(trip.id, { endDate: e.target.value })} /></label>
                     </div>
                   )}
                 </div>
@@ -234,6 +330,8 @@ const MyPageView = () => {
           </div>
         )}
       </div>
+
+      <TripDetailModal trip={selectedTrip} isOpen={isTripModalOpen} onClose={closeTripModal} />
     </div>
   )
 }
