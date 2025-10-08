@@ -1,8 +1,9 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from '../../ui'
+import Select from '../../ui/Select'
 import { useAuth } from '../../../hooks/api/useAuth'
-import { useNavigate } from 'react-router-dom'
+import { useStore } from '../../../context/StoreContext'
 import './DestinationDetailModal.css'
 
 const DestinationDetailModal = ({
@@ -14,7 +15,8 @@ const DestinationDetailModal = ({
   onToggleSave,
 }) => {
   const { isAuthenticated, promptLogin } = useAuth()
-  const navigate = useNavigate()
+  const { trips, createTripWithDestination, appendDestinationToTrip } = useStore()
+  const [selectedTripId, setSelectedTripId] = useState('NEW')
   useEffect(() => {
     if (!isOpen) return
 
@@ -53,8 +55,21 @@ const DestinationDetailModal = ({
 
   const handlePlannerAdd = () => {
     if (!isAuthenticated) return promptLogin()
-    navigate('/planner')
+
+    const destKey = destination?.id || destination?.name
+    if (!destKey) return
+
+    if (selectedTripId === 'NEW' || trips.length === 0) {
+      createTripWithDestination(destKey, { title: destination?.name })
+      onClose()
+      alert('새 여행 계획에 추가되었습니다!')
+      return
+    }
+
+    // append to selected
+    appendDestinationToTrip(selectedTripId, destKey)
     onClose()
+    alert('선택한 여행 계획에 추가했습니다!')
   }
 
   return createPortal(
@@ -123,6 +138,23 @@ const DestinationDetailModal = ({
                 <p>{destination.creditCard ? '사용 가능' : '사용 불가'}</p>
               </div>
             </div>
+          </div>
+
+          {/* Add to trip controls */}
+          <div className="modal-section">
+            {trips.length > 0 && (
+              <div className="modal-info-grid">
+                <div>
+                  <strong>추가할 계획 선택</strong>
+                  <Select
+                    value={selectedTripId}
+                    onChange={(value) => setSelectedTripId(value)}
+                    options={[{ value: 'NEW', label: '새 여행 계획 만들기' }, ...trips.map(t => ({ value: t.id, label: t.title || '여행 계획' }))]}
+                    placeholder="선택하세요"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Actions */}
