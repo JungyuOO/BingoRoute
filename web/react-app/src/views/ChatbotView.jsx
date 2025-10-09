@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { ChatHeader, ChatMessage, QuickReplies, ChatInput } from '../components/features/chat'
 import './ChatbotView.css'
+import DestinationDetailModal from "../components/features/destinations/DestinationDetailModal";
+
 
 const INITIAL_CHIPS = [
   '역사와 문화 탐방',
@@ -94,7 +96,9 @@ const mockReply = (text) => {
 const ChatbotView = () => {
   const [messages, setMessages] = useState([{ id: 1, role: 'assistant', content: systemGreeting }])
   const [chips, setChips] = useState(INITIAL_CHIPS)
+  const [selectedDestination, setSelectedDestination] = useState(null)
 
+  
   const pushMessage = (role, content) => {
     setMessages((prev) => [...prev, { id: Date.now() + Math.random(), role, content }])
   }
@@ -113,7 +117,9 @@ const ChatbotView = () => {
           'assistant',
           <div className="card-list">
             {reply.cards.map((card) => (
-              <div key={card.id} className="tour-card">
+              <div key={card.id} className="tour-card"
+                onClick={() => setSelectedDestination(card)} // ⭐ 클릭 시 모달 열기
+                >
                 <img src={card.image} alt={card.name} className="tour-image" />
                 <div className="tour-info">
                   <h4>{card.name}</h4>
@@ -158,6 +164,16 @@ const ChatbotView = () => {
         <div className="muted" style={{ fontSize: 15, marginTop: 8 }}>
           AI가 생성한 답변입니다. 실제 정보와 다를 수 있으니 참고용으로만 활용해주세요.
         </div>
+        {/* ✅ 모달 추가 */}
+        {selectedDestination && (
+          <DestinationDetailModal
+            destination={selectedDestination}
+            isOpen={!!selectedDestination}
+            onClose={() => setSelectedDestination(null)}
+            isSaved={false}
+            onToggleSave={() => console.log('찜하기 눌림')}
+          />
+        )}
       </div>
     </div>
   )
