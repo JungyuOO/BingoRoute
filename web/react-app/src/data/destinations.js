@@ -1,4 +1,4 @@
-// TODO: Django API 연동 시 이 파일 삭제 예정
+// ⭐ TODO: Django API 연동 시 이 파일 삭제 예정
 export const DESTINATIONS = [];   // 일단 빈 배열 유지
 export const WEATHER_PRESETS = {}; // 일단 빈 객체 유지
 

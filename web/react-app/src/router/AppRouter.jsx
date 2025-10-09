@@ -38,9 +38,7 @@ const AppRouter = () => {
           <Route
             path={ROUTES.PLANNER}
             element={
-              <RequireAuth>
-                <ChatbotView />
-              </RequireAuth>
+              <ChatbotView /> // ⭐ RequireAuth(로그인필요) 삭제
             }
           />
 
