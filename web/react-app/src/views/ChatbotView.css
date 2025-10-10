@@ -1,43 +1,122 @@
 .card-list {
     display: flex;
-    gap: 12px;
-    margin-top: 12px;
+    gap: 14px;
+    margin-top: 16px;
     overflow-x: auto;
-    padding-bottom: 8px;
+    padding: 8px 0 16px 0;
+    scrollbar-width: thin;
+    scrollbar-color: #5EABA2 #f0f0f0;
 }
- 
+
+.card-list::-webkit-scrollbar {
+    height: 6px;
+}
+
+.card-list::-webkit-scrollbar-track {
+    background: #f0f0f0;
+    border-radius: 3px;
+}
+
+.card-list::-webkit-scrollbar-thumb {
+    background: #5EABA2;
+    border-radius: 3px;
+}
+
+
+
+/* 추천여행지 카드 디자인 부분 */
 .tour-card {
-    min-width: 180px;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    background: var(--card);
+    border-radius: 16px;
+    border: 1px solid #5EABA2;
+    min-width: 280px;
+    max-width: 300px;
     overflow: hidden;
-    flex-shrink: 0;
-    transition: transform 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 54, 81, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    color: #003651;
+    cursor: pointer;
 }
 
 .tour-card:hover {
-    transform: translateY(-3px);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(252, 123, 84, 0.2);
+    border-color: #FC7B54;
+}
+
+.tour-card:focus-visible {
+    outline: 2px solid #FC7B54;
+    outline-offset: 3px;
 }
 
 .tour-image {
     width: 100%;
-    height: 120px;
+    height: 150px;
     object-fit: cover;
+    display: block;
+    background: linear-gradient(135deg, #5EABA2 0%, #FBBE0E 100%);
+}
+
+.tour-image:not([src]),
+.tour-image[src=""] {
+    background: linear-gradient(135deg, #5EABA2 0%, #FBBE0E 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+}
+
+.tour-image:not([src])::after,
+.tour-image[src=""]::after {
+    content: "이미지 로딩중...";
 }
 
 .tour-info {
-    padding: 8px 10px;
+    padding: 12px;
 }
 
 .tour-info h4 {
-    margin: 0;
-    font-size: 15px;
-    color: #222;
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #003651;
+    line-height: 1.3;
 }
 
 .tour-info p {
-    margin: 4px 0 0;
-    font-size: 13px;
+    margin: 0;
+    font-size: 14px;
     color: #555;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* System greeting styles */
+.system-greeting p {
+    margin: 0;
+}
+
+.system-greeting p:not(:first-child) {
+    margin-top: 6px;
+}
+
+/* Chat container styles */
+.chat-messages {
+    min-height: 46vh;
+}
+
+/* 챗봇 입력창 */
+.quick-replies-container {
+    margin: 8px 0 16px;
+}
+
+/* AI가 생성한 답변입니다. 실제 정보와 다를 수 있으니 참고용으로만 활용해주세요.*/
+.disclaimer {
+    font-size: 15px;
+    margin-top: 8px;
 }

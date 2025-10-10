@@ -100,7 +100,7 @@ const MyPageView = () => {
   }
 
   const getTripStatus = (trip) => {
-    const today = new Date().toISOString().slice(0,10)
+    const today = new Date().toISOString().slice(0, 10)
     const start = trip?.startDate || null
     const end = trip?.endDate || null
     if (!start && !end) return null
@@ -238,19 +238,19 @@ const MyPageView = () => {
       <div className="section">
         <h3>나의 여행 계획 ({trips.length})</h3>
         {trips.length > 1 && (
-          <div className="merge-row" style={{display:'flex',gap:8,alignItems:'center',margin:'8px 0 16px'}}>
-            <span className="muted" style={{minWidth:72}}>계획 병합</span>
-            <select className="form-input" value={mergeTarget} onChange={(e)=>setMergeTarget(e.target.value)} style={{maxWidth:220}}>
+          <div className="merge-row">
+            <span className="merge-label">계획 병합</span>
+            <select className="form-input merge-select" value={mergeTarget} onChange={(e) => setMergeTarget(e.target.value)}>
               <option value="">대상 선택</option>
               {trips.map(t => <option key={t.id} value={t.id}>{t.title || '여행 계획'}</option>)}
             </select>
             <span>⬅︎</span>
-            <select className="form-input" value={mergeSource} onChange={(e)=>setMergeSource(e.target.value)} style={{maxWidth:220}}>
+            <select className="form-input merge-select" value={mergeSource} onChange={(e) => setMergeSource(e.target.value)}>
               <option value="">합칠 계획</option>
               {trips.map(t => <option key={t.id} value={t.id}>{t.title || '여행 계획'}</option>)}
             </select>
-            <button className="btn-save" onClick={()=>{
-              if (!mergeTarget || !mergeSource || mergeTarget===mergeSource) return alert('서로 다른 두 계획을 선택하세요.')
+            <button className="btn-save" onClick={() => {
+              if (!mergeTarget || !mergeSource || mergeTarget === mergeSource) return alert('서로 다른 두 계획을 선택하세요.')
               mergeTrips(mergeTarget, [mergeSource])
               setMergeTarget('')
               setMergeSource('')
@@ -264,7 +264,6 @@ const MyPageView = () => {
               <div
                 key={index}
                 className="trip-button"
-                style={{position:'relative'}}
                 role="button"
                 tabIndex={0}
                 onClick={() => openTripModal(trip)}
@@ -277,7 +276,7 @@ const MyPageView = () => {
                       <span>{formatDateRange(trip)}</span>
                     </div>
                   </div>
-                  <div style={{display:'flex',gap:8, alignItems:'center'}}>
+                  <div className="status-container">
                     {(() => {
                       const status = getTripStatus(trip)
                       if (!status) return null
@@ -292,10 +291,10 @@ const MyPageView = () => {
                       (trip.destinations || trip.routes).map((d, i) => {
                         const dest = DESTINATIONS.find(x => x.id === d || x.name === d)
                         return (
-                          <span key={`${d}-${i}`} className="destination-tag" style={{display:'inline-flex',alignItems:'center',gap:6}}>
+                          <span key={`${d}-${i}`} className="destination-tag destination-tag-editable">
                             {dest?.name || d}
-                            {editingTripId===trip.id && (
-                              <button className="btn-cancel" onClick={(e)=> { e.stopPropagation(); removeDestinationFromTrip(trip.id, d) }} style={{padding:'0 6px'}}>×</button>
+                            {editingTripId === trip.id && (
+                              <button className="btn-cancel destination-remove-btn" onClick={(e) => { e.stopPropagation(); removeDestinationFromTrip(trip.id, d) }}>×</button>
                             )}
                           </span>
                         )
@@ -305,18 +304,18 @@ const MyPageView = () => {
                     )}
                   </div>
                   <div className="trip-actions-row">
-                    <button className="btn-edit" onClick={(e)=> { e.stopPropagation(); setEditingTripId(editingTripId===trip.id ? null : trip.id) }}>{editingTripId===trip.id ? '수정 완료' : '수정하기'}</button>
-                    <button className="btn-share" onClick={(e)=> { e.stopPropagation(); shareTrip(trip) }}>공유하기</button>
+                    <button className="btn-edit" onClick={(e) => { e.stopPropagation(); setEditingTripId(editingTripId === trip.id ? null : trip.id) }}>{editingTripId === trip.id ? '수정 완료' : '수정하기'}</button>
+                    <button className="btn-share" onClick={(e) => { e.stopPropagation(); shareTrip(trip) }}>공유하기</button>
                   </div>
-                  {editingTripId===trip.id && (
-                    <div style={{display:'flex',gap:8,marginTop:8}}>
-                      <button className="btn-cancel" onClick={(e)=> { e.stopPropagation(); deleteTrip(trip.id) }}>여행 삭제</button>
+                  {editingTripId === trip.id && (
+                    <div className="delete-actions">
+                      <button className="btn-cancel" onClick={(e) => { e.stopPropagation(); deleteTrip(trip.id) }}>여행 삭제</button>
                     </div>
                   )}
-                  {editingTripId===trip.id && (
+                  {editingTripId === trip.id && (
                     <div className="dates-row">
-                      <label>시작일<input type="date" value={trip.startDate || ''} onClick={(e)=> e.stopPropagation()} onChange={(e)=> updateTrip(trip.id, { startDate: e.target.value })} /></label>
-                      <label>종료일<input type="date" value={trip.endDate || ''} onClick={(e)=> e.stopPropagation()} onChange={(e)=> updateTrip(trip.id, { endDate: e.target.value })} /></label>
+                      <label className="date-label">시작일<input type="date" value={trip.startDate || ''} onClick={(e) => e.stopPropagation()} onChange={(e) => updateTrip(trip.id, { startDate: e.target.value })} /></label>
+                      <label className="date-label">종료일<input type="date" value={trip.endDate || ''} onClick={(e) => e.stopPropagation()} onChange={(e) => updateTrip(trip.id, { endDate: e.target.value })} /></label>
                     </div>
                   )}
                 </div>

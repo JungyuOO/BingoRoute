@@ -395,3 +395,51 @@
     gap: 4px;
   }
 }
+/* 병합 관련 스타일 */
+.merge-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0 16px;
+}
+
+.merge-label {
+  min-width: 72px;
+}
+
+.merge-select {
+  max-width: 220px;
+}
+
+/* 여행 버튼 관련 스타일 */
+.trip-button {
+  position: relative;
+}
+
+.status-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.destination-tag-editable {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.destination-remove-btn {
+  padding: 0 6px;
+}
+
+.delete-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.date-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
