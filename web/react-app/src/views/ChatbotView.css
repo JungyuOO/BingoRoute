@@ -1,25 +1,68 @@
-.card-list {
+.cards-container {
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 12px;
+    padding-left: 40px;
+    /* 봇 아이콘 공간만큼 들여쓰기 */
+    padding-right: 100px;
+    /* 오른쪽 여백을 크게 추가 */
+}
+
+.scrollable-cards-container {
+    position: relative;
+    width: 100%;
+    max-width: 85%;
+    /* 최대 너비를 70%로 제한하여 더 짧게 */
+}
+
+.card-list-scrollable {
     display: flex;
     gap: 14px;
-    margin-top: 16px;
     overflow-x: auto;
     padding: 8px 0 16px 0;
-    scrollbar-width: thin;
-    scrollbar-color: #5EABA2 #f0f0f0;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
 }
 
-.card-list::-webkit-scrollbar {
-    height: 6px;
+.card-list-scrollable::-webkit-scrollbar {
+    display: none;
 }
 
-.card-list::-webkit-scrollbar-track {
-    background: #f0f0f0;
-    border-radius: 3px;
+.scroll-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(94, 171, 162, 0.9);
+    color: #FBF5E9;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.card-list::-webkit-scrollbar-thumb {
-    background: #5EABA2;
-    border-radius: 3px;
+.scroll-btn:hover {
+    background: rgba(74, 155, 146, 0.95);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.scroll-btn-left {
+    left: -20px;
+}
+
+.scroll-btn-right {
+    right: -20px;
 }
 
 

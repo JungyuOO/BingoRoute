@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { ChatHeader, ChatMessage, QuickReplies, ChatInput } from '../components/features/chat'
 import './ChatbotView.css'
 import DestinationDetailModal from "../components/features/destinations/DestinationDetailModal";
@@ -56,7 +56,7 @@ const systemGreeting = (
 )
 
 
-// ⭐ 버튼 클릭하지 않고 키워드를 직접 입력했을 때에도 마찬가지로 카드형으로 반환
+// 버튼 클릭없이 키워드를 직접 입력했을 때에도 마찬가지로 카드형으로 반환되도록
 const mockReply = (text) => {
   if (text.includes('역사') || text.includes('문화')) {
     return {
@@ -100,8 +100,88 @@ const ChatbotView = () => {
   const [selectedDestination, setSelectedDestination] = useState(null)
 
 
-  const pushMessage = (role, content) => {
-    setMessages((prev) => [...prev, { id: Date.now() + Math.random(), role, content }])
+  const pushMessage = (role, content, cards = null) => {
+    const messageId = Date.now() + Math.random()
+    setMessages((prev) => [...prev, { id: messageId, role, content, cards }])
+  }
+
+  // 스크롤 기반 카드 컴포넌트
+  const ScrollableCards = ({ cards, messageId }) => {
+    const scrollContainerRef = useRef(null)
+    const [canScrollLeft, setCanScrollLeft] = useState(false)
+    const [canScrollRight, setCanScrollRight] = useState(true)
+
+    const checkScrollButtons = () => {
+      const container = scrollContainerRef.current
+      if (container) {
+        setCanScrollLeft(container.scrollLeft > 0)
+        setCanScrollRight(
+          container.scrollLeft < container.scrollWidth - container.clientWidth
+        )
+      }
+    }
+
+    const scrollLeft = () => {
+      const container = scrollContainerRef.current
+      if (container) {
+        container.scrollBy({
+          left: -300, // 카드 너비만큼 스크롤
+          behavior: 'smooth'
+        })
+      }
+    }
+
+    const scrollRight = () => {
+      const container = scrollContainerRef.current
+      if (container) {
+        container.scrollBy({
+          left: 300, // 카드 너비만큼 스크롤
+          behavior: 'smooth'
+        })
+      }
+    }
+
+    useEffect(() => {
+      const container = scrollContainerRef.current
+      if (container) {
+        checkScrollButtons()
+        container.addEventListener('scroll', checkScrollButtons)
+        return () => container.removeEventListener('scroll', checkScrollButtons)
+      }
+    }, [])
+
+    return (
+      <div className="scrollable-cards-container">
+        {canScrollLeft && (
+          <button className="scroll-btn scroll-btn-left" onClick={scrollLeft}>
+            ‹
+          </button>
+        )}
+        
+        <div 
+          ref={scrollContainerRef}
+          className="card-list-scrollable"
+        >
+          {cards.map((card) => (
+            <div key={card.id} className="tour-card"
+              onClick={() => setSelectedDestination(card)}
+            >
+              <img src={card.image} alt={card.name} className="tour-image" />
+              <div className="tour-info">
+                <h4>{card.name}</h4>
+                <p>{card.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {canScrollRight && (
+          <button className="scroll-btn scroll-btn-right" onClick={scrollRight}>
+            ›
+          </button>
+        )}
+      </div>
+    )
   }
 
   const handleSend = (text) => {
@@ -112,24 +192,9 @@ const ChatbotView = () => {
     setTimeout(() => {
       pushMessage('assistant', <span>{reply.message}</span>)
 
-      // 2️⃣ 카드형 관광지 추천 추가
+      // 2️⃣ 카드형 관광지 추천 추가 (스크롤 기반)
       if (reply.cards && reply.cards.length > 0) {
-        pushMessage(
-          'assistant',
-          <div className="card-list">
-            {reply.cards.map((card) => (
-              <div key={card.id} className="tour-card"
-                onClick={() => setSelectedDestination(card)} // ⭐ 클릭 시 모달 열기
-              >
-                <img src={card.image} alt={card.name} className="tour-image" />
-                <div className="tour-info">
-                  <h4>{card.name}</h4>
-                  <p>{card.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )
+        pushMessage('cards', null, reply.cards)
       }
     }, 300)
   }
@@ -150,9 +215,15 @@ const ChatbotView = () => {
       <div className="section">
         <div className="chat-messages">
           {messages.map((m) => (
-            <ChatMessage key={m.id} role={m.role}>
-              {m.content}
-            </ChatMessage>
+            m.role === 'cards' ? (
+              <div key={m.id} className="cards-container">
+                <ScrollableCards cards={m.cards} messageId={m.id} />
+              </div>
+            ) : (
+              <ChatMessage key={m.id} role={m.role}>
+                {m.content}
+              </ChatMessage>
+            )
           ))}
         </div>
 
