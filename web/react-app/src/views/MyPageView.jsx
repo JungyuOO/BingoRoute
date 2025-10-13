@@ -106,20 +106,16 @@ const MyPageView = () => {
     const start = trip?.startDate || null
     const end = trip?.endDate || null
     if (!start && !end) return null
-
-    // 시작일만 선택했을 경우
     if (start && !end) {
       if (today < start) return '예정'
       if (today === start) return '여행중'
       return '완료'
     }
-    // 종료일만 선택했을 경우
     if (!start && end) {
       if (today < end) return '예정'
       if (today === end) return '여행중'
       return '완료'
     }
-    // 시작일, 종료일 모두 선택했을 경우
     if (today < start) return '예정'
     if (today > end) return '완료'
     return '여행중'
@@ -230,7 +226,7 @@ const MyPageView = () => {
       </div>
 
 
-{/* 마이페이지 찜한 장소 부분 */}
+      {/* 마이페이지 찜한 장소 부분 */}
 
       <div className="section">
         <h3>찜한 장소 ({wishlist.length})</h3>
@@ -248,7 +244,7 @@ const MyPageView = () => {
       </div>
 
 
-{/* 마이페이지 나의 여행계획 부분 */}
+      {/* 마이페이지 나의 여행계획 부분 */}
 
       <div className="section">
         <h3>나의 여행 계획 ({trips.length})</h3>
@@ -280,123 +276,139 @@ const MyPageView = () => {
 
         {trips.length > 0 ? (
           <div className="trip-list">
-            {trips.map((trip, index) => (
-              <div
-                key={index}
-                className="trip-button"
-                role="button"
-                tabIndex={0}
-                onClick={() => openTripModal(trip)}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openTripModal(trip) } }}
-              >
-                <div className="trip-button-header">
-                  <div>
-                    <div className="trip-button-title">{trip.title || `여행 계획 ${index + 1}`}</div>
-                    <div className="trip-button-meta">
-                      <span>{formatDateRange(trip)}</span>
-                    </div>
-                  </div>
-                  <div className="status-container">
-                    {(() => {
-                      const status = getTripStatus(trip)
-                      if (!status) return null
-                      const cls = status === '예정' ? 'planned' : status === '여행중' ? 'ongoing' : 'done'
-                      return <span className={`status-badge ${cls}`}>{status}</span>
-                    })()}
-                  </div>
-                </div>
-                <div className="trip-button-content">
-                  <div className="trip-destinations">
-                    {(trip.destinations || trip.routes || []).length > 0 ? (
-                      (trip.destinations || trip.routes).map((d, i) => {
-                        const dest = DESTINATIONS.find(x => x.id === d || x.name === d)
-                        return (
-                          <span key={`${d}-${i}`} className="destination-tag destination-tag-editable">
-                            {dest?.name || d}
-                            {editingTripId === trip.id && (
-                              <button 
-                                className="btn-cancel destination-remove-btn" 
-                                onClick={(e) => { 
-                                  e.stopPropagation(); 
-                                  e.preventDefault();
-                                  removeDestinationFromTrip(trip.id, d) 
-                                }}
-                              >
-                                ×
-                              </button>
-                            )}
-                          </span>
-                        )
-                      })
-                    ) : (
-                      <span className="weather-message-small">경로 없음</span>
-                    )}
-                  </div>
-                  <div className="trip-actions-row">
-                    <button className="btn-edit" onClick={(e) => { e.stopPropagation(); setEditingTripId(editingTripId === trip.id ? null : trip.id) }}>{editingTripId === trip.id ? '수정 완료' : '수정하기'}</button>
-                    <button className="btn-share" onClick={(e) => { e.stopPropagation(); shareTrip(trip) }}>공유하기</button>
-                    {getTripStatus(trip) === '완료' && (
-                      <button 
-                        className="btn-replan" 
-                        onClick={(e) => { 
-                          e.stopPropagation(); 
-                          replanTrip(trip.id);
-                          alert('여행 계획이 다시 계획되었습니다! 새로운 날짜를 설정해보세요.');
-                        }}
-                      >
-                        다시 계획하기
-                      </button>
-                    )}
-                  </div>
-                  {editingTripId === trip.id && (
-                    <div className="delete-actions" onClick={(e) => e.stopPropagation()}>
-                      <button className="btn-cancel" onClick={(e) => { e.stopPropagation(); deleteTrip(trip.id) }}>여행 삭제</button>
-                    </div>
-                  )}
-                  {editingTripId === trip.id && (
-                    <div className="edit-trip-form" onClick={(e) => e.stopPropagation()}>
-                      <label className="trip-title-label">
-                        여행명
-                        <input
-                          type="text"
-                          value={trip.title || ''}
-                          placeholder="여행명을 입력하세요"
-                          className="form-input"
-                          onClick={(e) => e.stopPropagation()}
-                          onMouseDown={(e) => e.stopPropagation()}
-                          onFocus={(e) => e.stopPropagation()}
-                          onChange={(e) => updateTrip(trip.id, { title: e.target.value })}
-                        />
-                      </label>
-                      <div className="dates-row">
-                        <label className="date-label">
-                          시작일
-                          <input
-                            type="date"
-                            value={trip.startDate || ''}
-                            onClick={(e) => e.stopPropagation()}
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onFocus={(e) => e.stopPropagation()}
-                            onChange={(e) => updateTrip(trip.id, { startDate: e.target.value })}
-                          />
-                        </label>
-                        <label className="date-label">
-                          종료일
-                          <input
-                            type="date"
-                            value={trip.endDate || ''}
-                            onClick={(e) => e.stopPropagation()}
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onFocus={(e) => e.stopPropagation()}
-                            onChange={(e) => updateTrip(trip.id, { endDate: e.target.value })}
-                          />
-                        </label>
+            {trips
+              .slice()
+              .sort((a, b) => {
+                const statusA = getTripStatus(a)
+                const statusB = getTripStatus(b)
+
+                // 여행 상태 우선순위: 여행중(1) > 예정(2) > 완료(3) 순으로 정렬됨.
+                const getPriority = (status) => {
+                  if (status === '여행중') return 1
+                  if (status === '예정') return 2
+                  if (status === '완료') return 3
+                  return 4 // 상태가 없는 경우
+                }
+
+                return getPriority(statusA) - getPriority(statusB)
+              })
+              .map((trip, index) => (
+                <div
+                  key={index}
+                  className="trip-button"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => openTripModal(trip)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openTripModal(trip) } }}
+                >
+                  <div className="trip-button-header">
+                    <div>
+                      <div className="trip-button-title">{trip.title || `여행 계획 ${index + 1}`}</div>
+                      <div className="trip-button-meta">
+                        <span>{formatDateRange(trip)}</span>
                       </div>
                     </div>
-                  )}
+                    <div className="status-container">
+                      {(() => {
+                        const status = getTripStatus(trip)
+                        if (!status) return null
+                        const cls = status === '예정' ? 'planned' : status === '여행중' ? 'ongoing' : 'done'
+                        return <span className={`status-badge ${cls}`}>{status}</span>
+                      })()}
+                    </div>
+                  </div>
+                  <div className="trip-button-content">
+                    <div className="trip-destinations">
+                      {(trip.destinations || trip.routes || []).length > 0 ? (
+                        (trip.destinations || trip.routes).map((d, i) => {
+                          const dest = DESTINATIONS.find(x => x.id === d || x.name === d)
+                          return (
+                            <span key={`${d}-${i}`} className="destination-tag destination-tag-editable">
+                              {dest?.name || d}
+                              {editingTripId === trip.id && (
+                                <button
+                                  className="btn-cancel destination-remove-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    removeDestinationFromTrip(trip.id, d)
+                                  }}
+                                >
+                                  ×
+                                </button>
+                              )}
+                            </span>
+                          )
+                        })
+                      ) : (
+                        <span className="weather-message-small">경로 없음</span>
+                      )}
+                    </div>
+                    <div className="trip-actions-row">
+                      <button className="btn-edit" onClick={(e) => { e.stopPropagation(); setEditingTripId(editingTripId === trip.id ? null : trip.id) }}>{editingTripId === trip.id ? '수정 완료' : '수정하기'}</button>
+                      <button className="btn-share" onClick={(e) => { e.stopPropagation(); shareTrip(trip) }}>공유하기</button>
+                      {getTripStatus(trip) === '완료' && (
+                        <button
+                          className="btn-replan"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            replanTrip(trip.id);
+                            alert('여행 계획이 다시 계획되었습니다! 새로운 날짜를 설정해보세요.');
+                          }}
+                        >
+                          다시 계획하기
+                        </button>
+                      )}
+                    </div>
+                    {editingTripId === trip.id && (
+                      <div className="delete-actions" onClick={(e) => e.stopPropagation()}>
+                        <button className="btn-cancel" onClick={(e) => { e.stopPropagation(); deleteTrip(trip.id) }}>여행 삭제</button>
+                      </div>
+                    )}
+                    {editingTripId === trip.id && (
+                      <div className="edit-trip-form" onClick={(e) => e.stopPropagation()}>
+                        <label className="trip-title-label">
+                          여행명
+                          <input
+                            type="text"
+                            value={trip.title || ''}
+                            placeholder="여행명을 입력하세요"
+                            className="form-input"
+                            onClick={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onFocus={(e) => e.stopPropagation()}
+                            onChange={(e) => updateTrip(trip.id, { title: e.target.value })}
+                          />
+                        </label>
+                        <div className="dates-row">
+                          <label className="date-label">
+                            시작일
+                            <input
+                              type="date"
+                              value={trip.startDate || ''}
+                              onClick={(e) => e.stopPropagation()}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onFocus={(e) => e.stopPropagation()}
+                              onChange={(e) => updateTrip(trip.id, { startDate: e.target.value })}
+                            />
+                          </label>
+                          <label className="date-label">
+                            종료일
+                            <input
+                              type="date"
+                              value={trip.endDate || ''}
+                              onClick={(e) => e.stopPropagation()}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onFocus={(e) => e.stopPropagation()}
+                              onChange={(e) => updateTrip(trip.id, { endDate: e.target.value })}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         ) : (
           <div className="center">
