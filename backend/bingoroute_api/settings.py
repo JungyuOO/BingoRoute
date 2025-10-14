@@ -13,10 +13,6 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-import pymysql
-
-# PyMySQL을 MySQLdb 모듈로 사용
-pymysql.install_as_MySQLdb()
 
 load_dotenv()
 
@@ -88,15 +84,12 @@ WSGI_APPLICATION = 'bingoroute_api.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('DB_NAME', 'bingoroute'),
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME', 'skn_travel_db'),
         'USER': os.getenv('DB_USER', 'django'),
         'PASSWORD': os.getenv('DB_PASSWORD', 'django1234'),
         'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '3306'),
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-        },
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
 
@@ -142,6 +135,9 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Custom User Model
+AUTH_USER_MODEL = 'accounts.CustomUser'
+
 # Django REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
@@ -168,3 +164,12 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 # Weather API Key
 WEATHER_API_KEY = os.getenv('WEATHER_API_KEY', 'L+tc+wRhGVm81bYY85f7Y0yOgk52KcfFi/DrgCBIKxq9b3MXSRwzVpMS2jvMrgxI6WmVq1B92LPY4odZw7z9BQ==')
+
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')  # Gmail 주소
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # Gmail 앱 비밀번호
+DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER', 'noreply@bingoroute.com')
