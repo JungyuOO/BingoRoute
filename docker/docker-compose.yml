@@ -1,21 +1,19 @@
 version: '3.8'
 
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: bingoroute_mysql
+  postgres:
+    image: postgres:15
+    container_name: bingoroute_postgres
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: bingoroute
-      MYSQL_USER: django
-      MYSQL_PASSWORD: django1234
+      POSTGRES_DB: skn_travel_db
+      POSTGRES_USER: django
+      POSTGRES_PASSWORD: django1234
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
-    command: --default-authentication-plugin=mysql_native_password
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD-SHELL", "pg_isready -U django -d skn_travel_db"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,16 +29,18 @@ services:
       - ../backend:/app
     environment:
       - DEBUG=1
-      - DB_HOST=mysql
-      - DB_NAME=bingoroute
+      - DB_HOST=postgres
+      - DB_NAME=skn_travel_db
       - DB_USER=django
       - DB_PASSWORD=django1234
-      - DB_PORT=3306
+      - DB_PORT=5432
+      - EMAIL_HOST_USER=${EMAIL_HOST_USER}
+      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
     # Ensure entrypoint runs even if bind-mounted file loses +x
     entrypoint: ["sh", "/app/docker/entrypoint.sh"]
 
 volumes:
-  mysql_data:
+  postgres_data:
