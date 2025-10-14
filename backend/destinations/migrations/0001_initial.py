@@ -46,26 +46,26 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': '사용자들',
             },
         ),
-        migrations.CreateModel(
-            name='WeatherData',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('region', models.CharField(max_length=50, verbose_name='지역')),
-                ('weather_type', models.CharField(choices=[('현재', '현재'), ('단기', '단기'), ('중기', '중기')], max_length=10, verbose_name='타입')),
-                ('date', models.CharField(max_length=8, verbose_name='날짜')),
-                ('time', models.CharField(max_length=10, verbose_name='시간')),
-                ('category', models.CharField(max_length=50, verbose_name='항목')),
-                ('value', models.CharField(max_length=100, verbose_name='값')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-            ],
-            options={
-                'verbose_name': '날씨 데이터',
-                'verbose_name_plural': '날씨 데이터들',
-                'ordering': ['-date', '-time'],
-                'unique_together': {('region', 'weather_type', 'date', 'time', 'category')},
-            },
-        ),
+        # migrations.CreateModel(
+        #     name='WeatherData',
+        #     fields=[
+        #         ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+        #         ('region', models.CharField(max_length=50, verbose_name='지역')),
+        #         ('weather_type', models.CharField(choices=[('현재', '현재'), ('단기', '단기'), ('중기', '중기')], max_length=10, verbose_name='타입')),
+        #         ('date', models.CharField(max_length=8, verbose_name='날짜')),
+        #         ('time', models.CharField(max_length=10, verbose_name='시간')),
+        #         ('category', models.CharField(max_length=50, verbose_name='항목')),
+        #         ('value', models.CharField(max_length=100, verbose_name='값')),
+        #         ('created_at', models.DateTimeField(auto_now_add=True)),
+        #         ('updated_at', models.DateTimeField(auto_now=True)),
+        #     ],
+        #     options={
+        #         'verbose_name': '날씨 데이터',
+        #         'verbose_name_plural': '날씨 데이터들',
+        #         'ordering': ['-date', '-time'],
+        #         'unique_together': {('region', 'weather_type', 'date', 'time', 'category')},
+        #     },
+        # ),
         migrations.CreateModel(
             name='Trip',
             fields=[
