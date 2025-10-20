@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
+    'drf_spectacular',
     'destinations',
     'accounts',
 ]
@@ -86,8 +87,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('DB_NAME', 'skn_travel_db'),
-        'USER': os.getenv('DB_USER', 'django'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'django1234'),
+        'USER': os.getenv('DB_USER', 'root'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'root1234'),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),
     }
@@ -140,6 +141,7 @@ AUTH_USER_MODEL = 'accounts.CustomUser'
 
 # Django REST Framework
 REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
@@ -173,3 +175,18 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')  # Gmail 주소
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # Gmail 앱 비밀번호
 DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER', 'noreply@bingoroute.com')
+# DRF Spectacular 설정
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'BingoRoute API',
+    'DESCRIPTION': '빙고루트 여행 플랫폼 API 문서',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': '/api/',
+    'TAGS': [
+        {'name': '회원관리', 'description': '사용자 회원가입, 로그인, 프로필 관리'},
+        {'name': '관광지', 'description': '관광지 정보 조회 및 관리'},
+        {'name': '찜하기', 'description': '관광지 찜하기 기능'},
+        {'name': '여행계획', 'description': '여행 계획 생성 및 관리'},
+    ],
+}
