@@ -42,6 +42,7 @@ class CustomUser(AbstractUser):
     
     class Meta:
         db_table = 'accounts_user'
+        managed = False  # Django가 이 테이블을 관리하지 않음 (init.sql에서 생성)
         verbose_name = '사용자'
         verbose_name_plural = '사용자들'
     
