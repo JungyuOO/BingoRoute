@@ -1,10 +1,10 @@
 #!/bin/sh
 set -e
 
-HOST="${DB_HOST:-mysql}"
-PORT="${DB_PORT:-3306}"
+HOST="${DB_HOST:-postgres}"
+PORT="${DB_PORT:-5432}"
 
-printf 'Waiting for MySQL at %s:%s...\n' "$HOST" "$PORT"
+printf 'Waiting for PostgreSQL at %s:%s...\n' "$HOST" "$PORT"
 while ! python - <<PYCODE
 import socket
 import sys
@@ -22,7 +22,15 @@ do
   sleep 1
 done
 
-echo "MySQL is up, running migrations..."
+echo "PostgreSQL is up, cleaning old migrations..."
+# 모든 마이그레이션 파일 삭제 (__init__.py 제외)
+find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
+find . -path "*/migrations/*.pyc" -delete
+
+echo "Creating fresh migrations..."
+python manage.py makemigrations --noinput
+
+echo "Running migrations..."
 python manage.py migrate --noinput
 
 echo "Starting Django server..."

@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import Destination, DestinationTag, User, Wishlist, Trip
+from django.contrib.auth import get_user_model
+from .models import Destination, DestinationTag, Wishlist, Trip
+
+User = get_user_model()
 
 class DestinationTagInline(admin.TabularInline):
     model = DestinationTag
@@ -14,8 +17,8 @@ class DestinationAdmin(admin.ModelAdmin):
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ['name', 'email', 'created_at']
-    search_fields = ['name', 'email']
+    list_display = ['user_id', 'first_name', 'email', 'created_at']
+    search_fields = ['user_id', 'first_name', 'email']
 
 @admin.register(Wishlist)
 class WishlistAdmin(admin.ModelAdmin):
@@ -26,6 +29,6 @@ class WishlistAdmin(admin.ModelAdmin):
 class TripAdmin(admin.ModelAdmin):
     list_display = ['user', 'title', 'duration', 'style', 'created_at']
     list_filter = ['duration', 'style', 'created_at']
-    search_fields = ['title', 'user__name']
+    search_fields = ['title', 'user__user_id', 'user__first_name']
     
 # 날씨 데이터는 CSV 파일로 관리됩니다
