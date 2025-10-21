@@ -1,0 +1,75 @@
+.br-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: #FBF5E9;
+  backdrop-filter: saturate(180%) blur(8px);
+  /* border-bottom: 1px solid #5EABA2; */
+  color: #003651;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 1.8rem;
+  letter-spacing: 0.5px;
+  color: #003651;
+  text-decoration: none;
+  flex-shrink: 0;
+  /* 축소 방지 */
+}
+
+
+.logo-badge {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 2px;
+  /* border: 2px solid #003651; */
+  background: #FBBE0E;
+}
+
+.search {
+  flex: 1;
+  max-width: 500px;
+  /* 최대 너비 제한 */
+  min-width: 300px;
+  /* 최소 너비 보장 */
+  margin: 0 20px;
+  /* 좌우 여백 */
+}
+
+.search input {
+  width: 135%;
+  padding: 10px 12px;
+  border: 2px solid #5EABA2;
+  border-radius: 30px;
+  background: #FBF5E9;
+  color: #5EABA2;
+}
+
+/* 우측 영역 길이 고정 */
+.br-header .row {
+  min-width: 380px;
+  /* 최소 너비만 보장 */
+  flex-shrink: 0;
+  /* 축소 방지 */
+  justify-content: flex-end;
+}
+
+/* 헤더 컨테이너 레이아웃 */
+.br-header .br-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  /* 전체 너비 사용 */
+  max-width: 1100px;
+  /* 최대 너비 제한 */
+  margin:  auto;
+  /* 중앙 정렬 */
+  padding: 0 20px;
+  /* 좌우 패딩 */
+}
