@@ -5,6 +5,7 @@
   FIND_ID: '/find-id',
   FIND_PASSWORD: '/find-password',
   MYPAGE: '/mypage',
+  MYPLANS: '/myplans', // ⭐ 추가
   PLANNER: '/planner',
   PLACE: '/place/:id',
   PLACE_DETAIL: (id) => `/place/${id}`,

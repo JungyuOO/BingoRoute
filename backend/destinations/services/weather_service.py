@@ -7,6 +7,10 @@ from .weather_api import SEOUL_GU, get_current_weather, get_short_forecast, get_
 
 class WeatherService:
     """날씨 데이터 수집 및 CSV 저장/조회 서비스"""
+    # NOTE:
+    # 프로젝트 요구에 따라 api_data 폴더의 CSV 더미 데이터 사용을 잠정 중단합니다.
+    # 아래 메서드들에서 CSV 파일을 읽거나 쓰는 부분을 안전하게 우회하고,
+    # 추후 실제 API 연동 시 주석을 원복하거나 API 결과를 직접 반환하도록 교체하세요.
     
     # collect_and_save_weather_data 메서드 제거됨 - collect_save_and_load 사용
     
@@ -14,18 +18,16 @@ class WeatherService:
     def get_current_weather_summary():
         """현재 시간대 날씨 정보 반환 (단기 예보에서 현재 시간대 데이터 추출)"""
         try:
-            # 최신 CSV 파일 찾기
-            csv_file = WeatherService._get_latest_weather_csv()
-            if not csv_file:
-                # CSV 파일이 없으면 실시간으로 수집
-                WeatherService.collect_and_save_to_csv()
-                csv_file = WeatherService._get_latest_weather_csv()
-                
-            if not csv_file:
-                return {}
-            
-            # CSV에서 단기 예보 데이터 읽기
-            df = pd.read_csv(csv_file)
+            # CSV 더미 데이터 사용 중단: 빈 결과 반환 (API 직결 예정)
+            # 기존 CSV 경로 탐색/로드 로직은 보존하되 비활성화합니다.
+            # csv_file = WeatherService._get_latest_weather_csv()
+            # if not csv_file:
+            #     WeatherService.collect_and_save_to_csv()
+            #     csv_file = WeatherService._get_latest_weather_csv()
+            # if not csv_file:
+            #     return {}
+            # df = pd.read_csv(csv_file)
+            return {}
             
             # 서울 시간대 기준으로 현재 시간 계산
             import pytz
@@ -46,35 +48,8 @@ class WeatherService:
             target_time = f"{closest_hour:02d}00"
 
             
-            # 단기 예보에서 현재 시간대 데이터 필터링
-            current_df = df[
-                (df['타입'] == '단기') & 
-                (df['날짜'].astype(str) == today) &
-                (df['시간'].astype(str) == target_time)
-            ]
-            
-            weather_by_region = {}
-            
-            for _, row in current_df.iterrows():
-                region = row['지역']
-                category = row['항목']
-                value = row['값']
-                
-                if region not in weather_by_region:
-                    weather_by_region[region] = {
-                        'forecast_time': target_time,
-                        'seoul_time': now_seoul.strftime("%Y-%m-%d %H:%M")
-                    }
-                
-                # 항목별 매핑
-                if category == 'TMP':
-                    weather_by_region[region]['기온(℃)'] = str(value) if pd.notna(value) else '정보없음'
-                elif category == 'WSD':
-                    weather_by_region[region]['풍속(m/s)'] = str(value) if pd.notna(value) else '정보없음'
-                elif category == 'PCP':
-                    weather_by_region[region]['강수량(mm)'] = str(value) if pd.notna(value) else '0'
-            
-            return weather_by_region
+            # 기존 CSV 기반 가공 로직 주석화 (위에서 빈 dict 반환)
+            # return weather_by_region
             
         except Exception as e:
             print(f"❌ 현재 날씨 조회 오류: {e}")
@@ -84,46 +59,8 @@ class WeatherService:
     def get_weather_forecast(region=None, days=3):
         """날씨 예보 조회 (CSV에서 읽기)"""
         try:
-            # 최신 CSV 파일 찾기
-            csv_file = WeatherService._get_latest_weather_csv()
-            if not csv_file:
-                # CSV 파일이 없으면 실시간으로 수집
-                WeatherService.collect_and_save_to_csv()
-                csv_file = WeatherService._get_latest_weather_csv()
-                
-            if not csv_file:
-                return []
-            
-            # CSV에서 예보 데이터 읽기
-            df = pd.read_csv(csv_file)
-            
-            # 단기 예보 데이터 필터링
-            forecast_df = df[df['타입'] == '단기']
-            
-            if region:
-                forecast_df = forecast_df[forecast_df['지역'] == region]
-            
-            # 날짜 범위 필터링
-            today = datetime.date.today()
-            end_date = (today + datetime.timedelta(days=days)).strftime("%Y%m%d")
-            
-            forecast_df = forecast_df[
-                (forecast_df['날짜'].astype(str) >= today.strftime("%Y%m%d")) &
-                (forecast_df['날짜'].astype(str) <= end_date)
-            ]
-            
-            # 결과 정리
-            forecast_data = []
-            for _, row in forecast_df.iterrows():
-                forecast_data.append({
-                    '지역': row['지역'],
-                    '날짜': row['날짜'],
-                    '시간': row['시간'],
-                    '항목': row['항목'],
-                    '값': row['값']
-                })
-            
-            return forecast_data
+            # CSV 더미 데이터 사용 중단: 빈 리스트 반환 (API 직결 예정)
+            return []
             
         except Exception as e:
             print(f"❌ 날씨 예보 조회 오류: {e}")
@@ -132,63 +69,14 @@ class WeatherService:
     @staticmethod
     def collect_and_save_to_csv():
         """API에서 날씨 데이터를 수집하고 CSV로 저장"""
-        print("🌤️ 날씨 데이터 수집 및 CSV 저장 시작...")
-        
-        # API 데이터 폴더 경로
-        api_data_dir = os.path.join(settings.BASE_DIR, 'api_data')
-        os.makedirs(api_data_dir, exist_ok=True)
-        
-        today = datetime.date.today().strftime("%Y%m%d")
-        short_data = []
-        
-        # 1. 서울 구별 단기예보 수집 (현재 시간 포함)
-        for gu, (nx, ny) in SEOUL_GU.items():
-            print(f"📍 {gu} 데이터 수집 중...")
-            
-            # 단기예보 (현재 시간부터 3일간)
-            forecast_data = get_short_forecast(nx, ny)
-            for forecast in forecast_data:
-                short_data.append({
-                    "지역": gu,
-                    "타입": "단기",
-                    "날짜": forecast["예보일자"],
-                    "시간": forecast["예보시간"],
-                    "항목": forecast["항목"],
-                    "값": str(forecast["값"])
-                })
-        
-        # 2. 서울 전체 중기예보 수집
-        print("📍 서울 중기예보 수집 중...")
-        mid_data = get_mid_forecast("11B10101")
-        mid_formatted = []
-        for mid_forecast in mid_data:
-            mid_formatted.append({
-                "지역": "서울",
-                "타입": "중기",
-                "날짜": mid_forecast["날짜"],
-                "시간": mid_forecast["시간"],
-                "항목": mid_forecast["항목"],
-                "값": str(mid_forecast["값"])
-            })
-        
-        # 3. CSV 파일로 저장
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        short_filename = os.path.join(api_data_dir, f"seoul_short_{timestamp}.csv")
-        mid_filename = os.path.join(api_data_dir, f"seoul_mid_{timestamp}.csv")
-        
-        if short_data:
-            pd.DataFrame(short_data).to_csv(short_filename, index=False, encoding="utf-8-sig")
-            print(f"✅ 단기 데이터 CSV 저장: {short_filename}")
-        
-        if mid_formatted:
-            pd.DataFrame(mid_formatted).to_csv(mid_filename, index=False, encoding="utf-8-sig")
-            print(f"✅ 중기 데이터 CSV 저장: {mid_filename}")
-        
+        # CSV 더미 데이터 저장 비활성화
+        # 추후 실제 API 연동 시, CSV 저장 없이 메모리/DB 저장으로 교체 가능
+        print("🌤️ (비활성화) CSV 저장 로직 우회: 더미 파일을 생성하지 않습니다.")
         return {
-            'short_file': short_filename if short_data else None,
-            'mid_file': mid_filename if mid_formatted else None,
-            'short_count': len(short_data),
-            'mid_count': len(mid_formatted)
+            'short_file': None,
+            'mid_file': None,
+            'short_count': 0,
+            'mid_count': 0
         }
     
 
@@ -240,61 +128,15 @@ class WeatherService:
         api_data_dir = os.path.join(settings.BASE_DIR, 'api_data')
         if not os.path.exists(api_data_dir):
             return None
-        
-        csv_files = []
-        for filename in os.listdir(api_data_dir):
-            if filename.startswith('seoul_short_') and filename.endswith('.csv'):
-                file_path = os.path.join(api_data_dir, filename)
-                csv_files.append((file_path, os.path.getctime(file_path)))
-        
-        if not csv_files:
-            return None
-        
-        # 가장 최신 파일 반환
-        latest_file = max(csv_files, key=lambda x: x[1])
-        return latest_file[0]
+        # CSV 더미 데이터 탐색 비활성화
+        return None
     
     @staticmethod
     def get_mid_forecast_for_algorithm():
         """추천 알고리즘용 중기예보 데이터 조회 (CSV에서 읽기)"""
         try:
-            # 최신 중기예보 CSV 파일 찾기
-            csv_file = WeatherService._get_latest_mid_csv()
-            if not csv_file:
-                # CSV 파일이 없으면 실시간으로 수집
-                WeatherService.collect_and_save_to_csv()
-                csv_file = WeatherService._get_latest_mid_csv()
-                
-            if not csv_file:
-                return []
-            
-            # CSV에서 중기예보 데이터 읽기
-            df = pd.read_csv(csv_file)
-            
-            # 향후 7일간의 중기예보 데이터 필터링
-            today = datetime.date.today()
-            end_date = (today + datetime.timedelta(days=7)).strftime("%Y%m%d")
-            
-            mid_df = df[
-                (df['타입'] == '중기') &
-                (df['날짜'].astype(str) >= today.strftime("%Y%m%d")) &
-                (df['날짜'].astype(str) <= end_date)
-            ]
-            
-            # 결과 정리
-            forecast_data = []
-            for _, row in mid_df.iterrows():
-                forecast_data.append({
-                    'region': row['지역'],
-                    'date': row['날짜'],
-                    'period': row['시간'],
-                    'weather_condition': row['값'] if row['항목'] == '날씨' else None,
-                    'rain_probability': row['값'] if row['항목'] == '강수확률(%)' else None,
-                    'min_temperature': row['값'] if row['항목'] == '최저기온(℃)' else None,
-                    'max_temperature': row['값'] if row['항목'] == '최고기온(℃)' else None
-                })
-            
-            return forecast_data
+            # CSV 더미 데이터 사용 중단: 빈 리스트 반환 (API 직결 예정)
+            return []
             
         except Exception as e:
             print(f"❌ 중기예보 조회 오류: {e}")
@@ -306,43 +148,19 @@ class WeatherService:
         api_data_dir = os.path.join(settings.BASE_DIR, 'api_data')
         if not os.path.exists(api_data_dir):
             return None
-        
-        csv_files = []
-        for filename in os.listdir(api_data_dir):
-            if filename.startswith('seoul_mid_') and filename.endswith('.csv'):
-                file_path = os.path.join(api_data_dir, filename)
-                csv_files.append((file_path, os.path.getctime(file_path)))
-        
-        if not csv_files:
-            return None
-        
-        # 가장 최신 파일 반환
-        latest_file = max(csv_files, key=lambda x: x[1])
-        return latest_file[0]
+        # CSV 더미 데이터 탐색 비활성화
+        return None
     
     @staticmethod
     def get_weather_statistics():
         """날씨 데이터 통계 조회 (CSV 기반)"""
         try:
-            short_csv = WeatherService._get_latest_weather_csv()
-            mid_csv = WeatherService._get_latest_mid_csv()
-            
-            short_count = 0
-            mid_count = 0
-            
-            if short_csv and os.path.exists(short_csv):
-                df = pd.read_csv(short_csv)
-                short_count = len(df[df['타입'] == '단기'])
-            
-            if mid_csv and os.path.exists(mid_csv):
-                df = pd.read_csv(mid_csv)
-                mid_count = len(df[df['타입'] == '중기'])
-            
+            # CSV 더미 데이터 통계 비활성화: 0으로 반환
             return {
-                'short_forecast': short_count,
-                'mid_forecast': mid_count,
+                'short_forecast': 0,
+                'mid_forecast': 0,
                 'legacy_data': 0,
-                'total': short_count + mid_count
+                'total': 0
             }
             
         except Exception as e:
@@ -358,13 +176,8 @@ class WeatherService:
     def get_weather_by_time(target_date=None, target_time=None):
         """특정 시간대의 서울 구별 날씨 조회"""
         try:
-            # 최신 CSV 파일 찾기
-            csv_file = WeatherService._get_latest_weather_csv()
-            if not csv_file:
-                return []
-            
-            # CSV에서 단기 예보 데이터 읽기
-            df = pd.read_csv(csv_file)
+            # CSV 더미 데이터 사용 중단: 빈 리스트 반환 (API 직결 예정)
+            return []
             
             # 서울 시간대 기준으로 기본값 설정
             import pytz
@@ -381,39 +194,8 @@ class WeatherService:
                 closest_hour = min(forecast_hours, key=lambda x: abs(x - current_hour))
                 target_time = f"{closest_hour:02d}00"
             
-            # 해당 시간대 데이터 필터링
-            time_df = df[
-                (df['타입'] == '단기') & 
-                (df['날짜'].astype(str) == str(target_date)) &
-                (df['시간'].astype(str) == str(target_time))
-            ]
-            
-            # 구별로 그룹화
-            weather_by_region = {}
-            
-            for _, row in time_df.iterrows():
-                region = row['지역']
-                category = row['항목']
-                value = row['값']
-                
-                if region not in weather_by_region:
-                    weather_by_region[region] = {
-                        'region': region,
-                        'date': target_date,
-                        'time': target_time,
-                        'formatted_time': f"{target_time[:2]}:{target_time[2:]}",
-                        'formatted_date': WeatherService._format_date(target_date)
-                    }
-                
-                # 항목별 데이터 매핑
-                if category == 'TMP':
-                    weather_by_region[region]['temperature'] = value
-                elif category == 'WSD':
-                    weather_by_region[region]['wind_speed'] = value
-                elif category == 'PCP':
-                    weather_by_region[region]['precipitation'] = value
-            
-            return list(weather_by_region.values())
+            # 기존 CSV 기반 가공 로직 주석화 (위에서 빈 리스트 반환)
+            # return list(weather_by_region.values())
             
         except Exception as e:
             print(f"❌ 시간대별 날씨 조회 오류: {e}")

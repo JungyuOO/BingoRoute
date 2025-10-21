@@ -7,7 +7,7 @@ import { ROUTES } from '../router/routes'
 const LoginView = () => {
   const { setSession } = useStore()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
+  const [user_id, setUserId] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
@@ -16,7 +16,7 @@ const LoginView = () => {
     setError('')
 
     try {
-      const { user, access } = await loginRequest({ email, password })
+      const { user, access } = await loginRequest({ user_id, password })
       setSession({ ...user, access })
       navigate(ROUTES.HOME)
     } catch (err) {
@@ -31,11 +31,11 @@ const LoginView = () => {
           <h2>로그인</h2>
           <form className="form" onSubmit={handleSubmit}>
             <input
-              type="email"
+              type="text"
               className="input"
-              placeholder="이메일"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              placeholder="사용자 ID"
+              value={user_id}
+              onChange={(event) => setUserId(event.target.value)}
               required
             />
             <input

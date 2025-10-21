@@ -183,3 +183,67 @@
     gap: 12px;
   }
 }
+
+/* ✅ 여행 계획 선택 모달 (새 팝업 스타일) */
+.plan-select-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 3000;
+}
+
+.plan-select-modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  width: 340px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  text-align: center;
+  animation: fadeIn 0.25s ease;
+}
+
+.plan-select-modal h3 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  color: #003651;
+}
+
+.plan-select-modal p {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 16px;
+}
+
+/* ✅ 드롭다운 메뉴 */
+.dropdown-container {
+  margin-top: 10px;
+}
+
+.dropdown-select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  color: #003651;
+  cursor: pointer;
+  background: #fdfdfd;
+}
+
+.dropdown-select:hover {
+  border-color: #5EABA2;
+}
+
+.dropdown-select:focus {
+  outline: none;
+  border-color: #5EABA2;
+  box-shadow: 0 0 0 2px rgba(94, 171, 162, 0.2);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

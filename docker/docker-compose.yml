@@ -1,46 +1,51 @@
 version: '3.8'
 
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: bingoroute_mysql
+  postgres:
+    image: pgvector/pgvector:pg16       # PostgreSQL 16 + pgvector 확장 기능 포함 이미지
+    container_name: bingoroute_postgres
+    restart: always                      # 컨테이너 비정상 종료 시 항상 재시작
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: bingoroute
-      MYSQL_USER: django
-      MYSQL_PASSWORD: django1234
+      # PostgreSQL 기본 계정 정보
+      POSTGRES_USER: root               # PostgreSQL 접속 사용자 이름
+      POSTGRES_PASSWORD: root1234        # PostgreSQL 접속 비밀번호
+      POSTGRES_DB: skn_travel_db              # 기본으로 생성할 데이터베이스 이름
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
-    command: --default-authentication-plugin=mysql_native_password
+      - postgres_data:/var/lib/postgresql/data
+      # 초기화 SQL 스크립트 자동 실행
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD-SHELL", "pg_isready -U root -d skn_travel_db"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   backend:
     build:
-      context: ../backend
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: backend/Dockerfile
     container_name: bingoroute_backend
     ports:
       - "8000:8000"
     volumes:
       - ../backend:/app
+      - ../data-pipeline:/app/data-pipeline
     environment:
       - DEBUG=1
-      - DB_HOST=mysql
-      - DB_NAME=bingoroute
-      - DB_USER=django
-      - DB_PASSWORD=django1234
-      - DB_PORT=3306
+      - DB_HOST=postgres
+      - DB_NAME=skn_travel_db
+      - DB_USER=root
+      - DB_PASSWORD=root1234
+      - DB_PORT=5432
+      - EMAIL_HOST_USER=${EMAIL_HOST_USER}
+      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
     # Ensure entrypoint runs even if bind-mounted file loses +x
     entrypoint: ["sh", "/app/docker/entrypoint.sh"]
 
 volumes:
-  mysql_data:
+  postgres_data:

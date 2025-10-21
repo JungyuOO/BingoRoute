@@ -280,6 +280,26 @@
   color: #003651;
 }
 
+/* Status badge (예정/완료) */
+.status-badge {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  align-self: flex-start;
+}
+.status-badge.planned { background: rgba(94,171,162,0.2); color:#003651; }
+.status-badge.ongoing { background: rgba(251,190,14,0.25); color:#003651; }
+.status-badge.done { background: rgba(252,123,84,0.2); color:#003651; }
+
+.trip-actions-row { display:flex; gap:8px; margin-top:8px; }
+.trip-actions-row .btn-edit { padding:6px 10px; }
+.trip-actions-row .btn-save { padding:6px 10px; }
+.btn-share { background:#EDE9FE; color:#003651; border:1px solid #5EABA2; padding:6px 10px; border-radius:8px; cursor:pointer; }
+
+.dates-row { display:flex; gap:8px; margin-top:8px; align-items:center; }
+.dates-row input[type="date"] { border:1.5px solid #5EABA2; border-radius:8px; padding:8px 10px; }
+
 .weather-badge {
   font-size: 12px;
   padding: 4px 8px;

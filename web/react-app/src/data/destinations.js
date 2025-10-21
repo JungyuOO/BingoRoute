@@ -1,3 +1,4 @@
+// ⭐ TODO: Django API 연동 시 이 파일 삭제 예정
 export const DESTINATIONS = [
   {
     id: 'gyeongbokgung',
