@@ -39,7 +39,6 @@ def main(flag):
     # 데이터 폴더 준비
     ensure_data_dirs()
 
-    print("⭐")
     # run_ldong_code(client)  # 법정동 데이터 API 호출
     # run_system_code(client) # 분류코드 데이터 API 호출
     code_df = base.main(write_to_disk=False)  # 코드테이블 구성 데이터를 전처리
