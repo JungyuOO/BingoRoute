@@ -1,0 +1,444 @@
+.trip-list {
+  display: grid;
+  gap: 16px;
+}
+
+.trip-card {
+  background: #FBF5E9;
+  border: 1px solid #5EABA2;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.2s;
+  color: #003651;
+}
+
+.trip-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 54, 81, 0.12);
+  border-color: #FC7B54;
+}
+
+.trip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.trip-meta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 4px;
+  color: #5EABA2;
+}
+
+.trip-date {
+  color: #5EABA2;
+  font-size: 14px;
+}
+
+.trip-card .weather-score {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+  color: #003651;
+}
+
+.trip-card .weather-score.excellent {
+  background: rgba(94, 171, 162, 0.2);
+}
+
+.trip-card .weather-score.good {
+  background: rgba(251, 190, 14, 0.2);
+}
+
+.trip-card .weather-score.fair {
+  background: rgba(252, 123, 84, 0.15);
+}
+
+.trip-card .weather-score.average {
+  background: rgba(94, 171, 162, 0.12);
+}
+
+.trip-card .weather-score.poor {
+  background: rgba(252, 123, 84, 0.25);
+}
+
+.trip-card .score-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #5EABA2;
+  color: #FBF5E9;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.trip-details {
+  border-top: 1px solid rgba(94, 171, 162, 0.3);
+  padding-top: 16px;
+}
+
+.trip-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.trip-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.trip-info-item .info-label {
+  font-size: 12px;
+  color: #5EABA2;
+  font-weight: 500;
+}
+
+.trip-info-item .info-value {
+  font-size: 14px;
+  color: #003651;
+}
+
+.trip-card .weather-recommendation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(251, 190, 14, 0.15);
+  border-radius: 8px;
+  margin-top: 12px;
+  color: #003651;
+}
+
+.trip-card .weather-icon {
+  font-size: 16px;
+}
+
+.trip-card .weather-message {
+  font-size: 14px;
+  color: #003651;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .trip-header {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .trip-info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .trip-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
+/* 회원정보 표시 및 수정 스타일 */
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  padding: 16px 0;
+}
+
+.grid-2 > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.grid-2 strong {
+  color: #003651;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.grid-2 p {
+  color: #5EABA2;
+  font-size: 16px;
+  margin: 0;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.btn-edit {
+  background: #5EABA2;
+  color: #FBF5E9;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-edit:hover {
+  background: #4A9B92;
+  transform: translateY(-1px);
+}
+
+.edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-save {
+  background: #5EABA2;
+  color: #FBF5E9;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-save:hover {
+  background: #4A9B92;
+}
+
+.btn-cancel {
+  background: #FC7B54;
+  color: #FBF5E9;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-cancel:hover {
+  background: #E66A47;
+}
+
+.edit-form {
+  display: grid;
+  gap: 20px;
+}
+
+.readonly-info {
+  background: #F8F9FA;
+  border: 1px solid #E5E5E5;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.password-change-section {
+  background: #FBF5E9;
+  border: 2px solid #5EABA2;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.password-change-section h4 {
+  color: #003651;
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  color: #003651;
+  font-size: 14px;
+}
+
+.form-input {
+  padding: 12px 16px;
+  border: 2px solid #E5E5E5;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #003651;
+  background: #FFFFFF;
+  transition: all 0.2s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #5EABA2;
+  box-shadow: 0 0 0 3px rgba(94, 171, 162, 0.1);
+}
+
+.form-input::placeholder {
+  color: #999;
+}
+
+/* 여행 계획 버튼 스타일 */
+.trip-buttons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.trip-button {
+  background: #FBF5E9;
+  border: 2px solid #5EABA2;
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  color: #003651;
+  width: 100%;
+}
+
+.trip-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 54, 81, 0.15);
+  border-color: #FC7B54;
+}
+
+.trip-button-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.trip-button-title {
+  font-weight: bold;
+  font-size: 16px;
+  color: #003651;
+}
+
+/* Status badge (예정/완료) */
+.status-badge {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  align-self: flex-start;
+}
+.status-badge.planned { background: rgba(94,171,162,0.2); color:#003651; }
+.status-badge.ongoing { background: rgba(251,190,14,0.25); color:#003651; }
+.status-badge.done { background: rgba(252,123,84,0.2); color:#003651; }
+
+.trip-actions-row { display:flex; gap:8px; margin-top:8px; }
+.trip-actions-row .btn-edit { padding:6px 10px; }
+.trip-actions-row .btn-save { padding:6px 10px; }
+.btn-share { background:#EDE9FE; color:#003651; border:1px solid #5EABA2; padding:6px 10px; border-radius:8px; cursor:pointer; }
+
+.dates-row { display:flex; gap:8px; margin-top:8px; align-items:center; }
+.dates-row input[type="date"] { border:1.5px solid #5EABA2; border-radius:8px; padding:8px 10px; }
+
+.weather-badge {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.weather-badge.excellent {
+  background: rgba(94, 171, 162, 0.2);
+  color: #003651;
+}
+
+.weather-badge.good {
+  background: rgba(251, 190, 14, 0.2);
+  color: #003651;
+}
+
+.weather-badge.fair {
+  background: rgba(252, 123, 84, 0.15);
+  color: #003651;
+}
+
+.weather-badge.average {
+  background: rgba(94, 171, 162, 0.12);
+  color: #003651;
+}
+
+.weather-badge.poor {
+  background: rgba(252, 123, 84, 0.25);
+  color: #003651;
+}
+
+.trip-button-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trip-button-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 14px;
+  color: #5EABA2;
+}
+
+.trip-destinations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.destination-tag {
+  background: rgba(94, 171, 162, 0.15);
+  color: #003651;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.weather-message-small {
+  font-size: 12px;
+  color: #5EABA2;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .edit-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .trip-buttons-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .trip-button-header {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .trip-button-meta {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
