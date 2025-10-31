@@ -14,40 +14,6 @@ venv/
 minwoo/
 
 # ETC
-.history
-
-# Python 캐시 파일
 __pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-
-# 가상환경
-.venv/
-env/
-venv/
-
-# 데이터베이스 마이그레이션 (Django 등)
-migrations/
-*/migrations/
-!*/migrations/__init__.py  # 단, 초기화 파일은 유지
-
-# 빌드/배포 파일
-build/
-dist/
-*.egg-info/
-
-# 로그 파일
-*.log
-
-# OS / IDE 관련
-.DS_Store
-.vscode/
-.idea/
-
-# Jupyter Notebook 체크포인트
-.ipynb_checkpoints/
-
-# 기타 불필요한 캐시
-*.sqlite3
-
+*.pyc
+.history
