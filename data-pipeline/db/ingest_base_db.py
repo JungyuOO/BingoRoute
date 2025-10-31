@@ -10,6 +10,17 @@ from psycopg2.extras import execute_batch, execute_values
 
 from db.common import pg_connect
 
+
+def _read_sql_dataframe(conn, query: str) -> pd.DataFrame:
+    with conn.cursor() as cur:
+        cur.execute(query)
+        rows = cur.fetchall()
+        description = cur.description or []
+    columns = [desc.name if hasattr(desc, "name") else desc[0] for desc in description]
+    if not rows:
+        return pd.DataFrame(columns=columns)
+    return pd.DataFrame(rows, columns=columns)
+
 # 상대 경로 문제 해결
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
@@ -170,9 +181,9 @@ def ingest_code_table(df: Optional[pd.DataFrame]) -> None:
     df = _sort_by_hierarchy(df)
 
     with pg_connect() as conn:
-        existing = pd.read_sql(
-            "SELECT code, name, upper_code, created_at, updated_at FROM code_table",
+        existing = _read_sql_dataframe(
             conn,
+            "SELECT code, name, upper_code, created_at, updated_at FROM code_table",
         )
 
         new_df, changed_df, existing_indexed = _split_new_changed(
@@ -244,7 +255,6 @@ def main(
 ) -> None:
     """필요 시 전처리부터 수행한 뒤 code_table에 데이터를 반영한다."""
 
-    print("⭐")
     from preprocess import base as preprocess_base
 
     ensure_tables_created()

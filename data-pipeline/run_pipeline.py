@@ -39,6 +39,14 @@ def main(flag):
     # 데이터 폴더 준비
     ensure_data_dirs()
 
+    parser = argparse.ArgumentParser(description='데이터 파이프라인 실행기')
+    parser.add_argument('--code-file', type=str, help='코드 테이블 JSON 파일 경로')
+    parser.add_argument('--spot-file', type=str, help='관광지 CSV 파일 경로')
+    parser.add_argument('--detail-file', type=str, help='관광지 상세정보 CSV 파일 경로')
+    # 날씨 데이터 파이프라인 실행
+
+    args = parser.parse_args()
+
     # run_ldong_code(client)  # 법정동 데이터 API 호출
     # run_system_code(client) # 분류코드 데이터 API 호출
     code_df = base.main(write_to_disk=False)  # 코드테이블 구성 데이터를 전처리
