@@ -12,3 +12,8 @@ venv/
 
 # 작업 폴더
 minwoo/
+
+# ETC
+__pycache__/
+*.pyc
+.history
