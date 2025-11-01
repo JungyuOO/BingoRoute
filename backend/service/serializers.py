@@ -17,15 +17,13 @@ class TouristDetailSerializer(serializers.ModelSerializer):
 
 # 사용자별 여행 계획 직렬화기
 class UserTourPlanSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = MemberTrip
-        fields = '__all__'
+        fields = ['trip_id', 'user_id', 'status', 'trip_title', 'travel_date', 'created_at', 'updated_at']
 
 
 # 여행별 관광지 목록 직렬화기
 class UserTourItinerarySerializer(serializers.ModelSerializer):
-
     class Meta:
         model = MemberTripItinerary
-        fields = '__all__'
+        fields = ['trip_id', 'seq', 'content_id', 'visit_date', 'stay_time']

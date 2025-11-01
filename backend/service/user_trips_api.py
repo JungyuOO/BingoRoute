@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 
 @extend_schema(
     tags=["여행계획"],
-    summary="사용자 여행 계획 목록 조회",
-    description="user_id, status 파라미터를 사용해 특정 사용자의 여행 계획을 필터링합니다.",
+    summary="사용자 여행 계획 목록 조회/생성",
+    description="user_id, status 파라미터로 특정 사용자의 여행 계획을 필터링하거나 새로운 여행 계획을 생성합니다.",
     parameters=[
         OpenApiParameter(
             name="user_id",
@@ -34,8 +34,8 @@ logger = logging.getLogger(__name__)
         ),
     ],
 )
-class UserTourPlanView(generics.ListAPIView):
-    """회원별 여행 계획 목록을 조회하는 뷰"""
+class UserTourPlanView(generics.ListCreateAPIView):
+    """회원별 여행 계획 목록 조회/생성"""
 
     serializer_class = UserTourPlanSerializer
 
@@ -49,6 +49,19 @@ class UserTourPlanView(generics.ListAPIView):
         if status:
             qs = qs.filter(status=status)
         return qs
+
+
+    @extend_schema(
+        request=UserTourPlanSerializer,
+        responses={201: UserTourPlanSerializer},
+        description="새로운 여행 계획을 생성합니다.",
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        logger.info("UserTourPlan created: trip_id=%s user_id=%s", instance.trip_id, instance.user_id)
 
 
 @extend_schema(
@@ -78,14 +91,28 @@ class UserTourItineraryView(generics.ListAPIView):
 
         qs = (
             MemberTripItinerary.objects.select_related("trip", "content")
-            .filter(trip__trip_id=trip_id)
+            .filter(trip_id=trip_id)
             .order_by("seq")
         )
         return qs
 
+@extend_schema(
+    tags=["여행계획"],
+    summary="여행 일정 조회",
+    description="trip_id로 특정 여행 계획에 속한 관광지 일정을 조회합니다.",
+    parameters=[
+        OpenApiParameter(
+            name="trip_id",
+            location=OpenApiParameter.QUERY,
+            description="필수. 조회할 여행 계획 ID.",
+            required=True,
+            type=int,
+        ),
+    ],
+)
 
-class UserTourPlanUpdateView(generics.UpdateAPIView):
-    """여행 계획을 수정하는 뷰"""
+class UserTourPlanDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """여행 계획 단건 조회/수정/삭제"""
     serializer_class = UserTourPlanSerializer
 
     def get_object(self):
@@ -105,15 +132,18 @@ class UserTourPlanUpdateView(generics.UpdateAPIView):
 
         if changed:
             serializer.save()
-            # 필요하면 여기서 로깅/추가 작업
-            logger.info(f"UserTourPlan updated: {changed}")
+            logger.info("UserTourPlan updated: trip_id=%s changes=%s", instance.trip_id, changed)
         else:
-            logger.info("No changes detected; update skipped.")
+            logger.info("No changes detected; update skipped for trip_id=%s", instance.trip_id)
+
+    def perform_destroy(self, instance):
+        logger.info("UserTourPlan deleted: trip_id=%s user_id=%s", instance.trip_id, instance.user_id)
+        instance.delete()
 
 
 
-class UserTourItineraryUpdateView(generics.UpdateAPIView):
-    """여행 계획에 속한 관광지를 수정하는 뷰"""
+class UserTourItineraryDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """여행 계획에 속한 관광지 단건 조회/수정/삭제"""
 
     serializer_class = UserTourItinerarySerializer
     queryset = MemberTripItinerary.objects.all()
@@ -121,4 +151,33 @@ class UserTourItineraryUpdateView(generics.UpdateAPIView):
     def get_object(self):
         trip_id = self.kwargs["trip_id"]
         seq = self.kwargs["seq"]
-        return get_object_or_404(self.queryset, trip__trip_id=trip_id, seq=seq)
+        return get_object_or_404(self.queryset, trip_id=trip_id, seq=seq)
+
+    def perform_update(self, serializer):
+        instance = serializer.instance or self.get_object()
+        updates = serializer.validated_data
+
+        changed = {
+            field: (getattr(instance, field), value)
+            for field, value in updates.items()
+            if getattr(instance, field) != value
+        }
+
+        if changed:
+            serializer.save()
+            logger.info(
+                "UserTourItinerary updated: trip_id=%s seq=%s changes=%s",
+                instance.trip_id_id,
+                instance.seq,
+                changed,
+            )
+        else:
+            logger.info(
+                "No changes detected; itinerary update skipped (trip_id=%s, seq=%s)",
+                instance.trip_id_id,
+                instance.seq,
+            )
+
+    def perform_destroy(self, instance):
+        logger.info("UserTourItinerary deleted: trip_id=%s seq=%s", instance.trip_id_id, instance.seq)
+        instance.delete()
