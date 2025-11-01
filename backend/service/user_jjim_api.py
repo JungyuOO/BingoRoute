@@ -1,7 +1,7 @@
 from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 
 from .models import Jjim
 from .serializers import (
@@ -75,6 +75,13 @@ class UserJjimView(generics.GenericAPIView):
                 type=str,
             ),
         ],
+        examples=[
+            OpenApiExample(
+                name="찜 추가 예시",
+                description="사용자 gyulteng2가 content_id 2733967을 찜한 경우",
+                value={"user_id": "gyulteng2", "content_id": "2733967"},
+            ),
+        ],
     )
     def post(self, request, *args, **kwargs):
         payload = self._get_payload(request)
@@ -103,6 +110,13 @@ class UserJjimView(generics.GenericAPIView):
                 description="해제할 관광지 ID.",
                 required=True,
                 type=str,
+            ),
+        ],
+        examples=[
+            OpenApiExample(
+                name="찜 해제 예시",
+                description="사용자 gyulteng2가 content_id 2733967 찜을 해제하는 경우",
+                value={"user_id": "gyulteng2", "content_id": "2733967"},
             ),
         ],
     )
