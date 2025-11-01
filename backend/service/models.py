@@ -106,25 +106,27 @@ class MemberTripItinerary(models.Model):
         ordering = ['trip_id', 'seq']
         unique_together = ('trip_id', 'seq')
 
-# class Jjim(models.Model):
-    # user_id = user_id = models.ForeignKey(
-    #     settings.AUTH_USER_MODEL,
-    #     db_column='user_id',
-    #     on_delete=models.CASCADE,
-    #     related_name='member_jjims',
-    # )
-#     content_id = models.ForeignKey(TouristSpot, on_delete=models.CASCADE)
-#     jjim_on_off = models.BooleanField()
+# 찜 테이블
+class Jjim(models.Model):
+    jjim_id = models.BigAutoField(primary_key=True)
+    user_id = models.CharField(max_length=50)
+    content = models.ForeignKey(
+        TouristSpot,
+        db_column='content_id',
+        to_field='content_id',
+        on_delete=models.CASCADE,
+        related_name='jjim_entries',
+    )
 
-#     class Meta:
-#         db_table = 'jjim'
-#         managed = False  # Django가 이 테이블을 관리하지 않음
-#         verbose_name = '찜'
-#         verbose_name_plural = '찜 목록'
-#         unique_together = ['user', 'content_id']
+    class Meta:
+        db_table = 'jjim'
+        managed = False  # Django가 이 테이블을 관리하지 않음
+        verbose_name = '찜'
+        verbose_name_plural = '찜 목록'
+        unique_together = ('user_id', 'content')
 
-#     def __str__(self):
-#         return f"{self.user.first_name} - {self.content_id.title} - {'찜' if self.jjim_on_off else '찜 해제'}"
+    def __str__(self):
+        return f"{self.user_id} - {self.content.title}"
 
 # RAG 벡터 테이블
 class MyVectors(models.Model):
