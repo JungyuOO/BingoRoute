@@ -104,7 +104,8 @@ CREATE INDEX IF NOT EXISTS ix_accounts_user_username ON accounts_user (username)
 
 -- 찜(jjim) 테이블
 CREATE TABLE IF NOT EXISTS jjim (
-    user_id      BIGINT NOT NULL,
+    jjim_id BIGSERIAL PRIMARY KEY,
+    user_id      VARCHAR(50) NOT NULL,
     content_id   VARCHAR(100) NOT NULL,
     CONSTRAINT fk_jjim_content
         FOREIGN KEY (content_id)
@@ -113,7 +114,7 @@ CREATE TABLE IF NOT EXISTS jjim (
         ON DELETE CASCADE,
     CONSTRAINT uq_user_content UNIQUE (user_id, content_id),
     CONSTRAINT fk_jjim_user FOREIGN KEY (user_id)
-        REFERENCES accounts_user(id)
+        REFERENCES accounts_user(user_id)
         ON UPDATE CASCADE ON DELETE CASCADE
 );
 
