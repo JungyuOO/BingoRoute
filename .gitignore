@@ -14,9 +14,6 @@ venv/
 minwoo/
 
 # ETC
-.history
-
-# Python 캐시 파일
 __pycache__/
 *.py[cod]
 *.pyo
