@@ -51,3 +51,5 @@ dist/
 # 기타 불필요한 캐시
 *.sqlite3
 
+# ETC
+.history
