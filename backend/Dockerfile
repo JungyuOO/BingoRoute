@@ -11,11 +11,12 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
-COPY requirements.txt .
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project files
-COPY . .
+COPY backend /app
+COPY data-pipeline /app/data-pipeline
 
 # Fix Windows line endings + ensure execute permission
 RUN dos2unix docker/entrypoint.sh && chmod +x docker/entrypoint.sh

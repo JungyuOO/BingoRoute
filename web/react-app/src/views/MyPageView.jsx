@@ -7,7 +7,7 @@ import { useStore } from '../context/StoreContext'
 import { DESTINATIONS } from '../data/destinations'
 
 const MyPageView = () => {
-  const { session, setSession, wishlist, trips, removeDestinationFromTrip, deleteTrip, mergeTrips, updateTrip } = useStore()
+  const { session, setSession, wishlist, trips, removeDestinationFromTrip, deleteTrip, mergeTrips, updateTrip, replanTrip } = useStore()
   const [isEditing, setIsEditing] = useState(false)
   const [isTripModalOpen, setIsTripModalOpen] = useState(false)
   const [selectedTrip, setSelectedTrip] = useState(null)
@@ -94,29 +94,30 @@ const MyPageView = () => {
     return `${startDate} ~ ${endDate}`
   }
 
+
+  // 여행 상태표시
   const getTripStatus = (trip) => {
     const today = new Date().toISOString().slice(0, 10)
     const start = trip?.startDate || null
     const end = trip?.endDate || null
     if (!start && !end) return null
-    // Only start
     if (start && !end) {
       if (today < start) return '예정'
       if (today === start) return '여행중'
       return '완료'
     }
-    // Only end
     if (!start && end) {
       if (today < end) return '예정'
       if (today === end) return '여행중'
       return '완료'
     }
-    // Both start and end
     if (today < start) return '예정'
     if (today > end) return '완료'
     return '여행중'
   }
 
+
+  // 여행계획 공유하기 -> 해당 여행계획의 url이 복사됨.
   const shareTrip = async (trip) => {
     const names = (trip.destinations || trip.routes || []).map(d => {
       const m = DESTINATIONS.find(x => x.id === d || x.name === d)
@@ -137,6 +138,7 @@ const MyPageView = () => {
     }
   }
 
+  // 모달창 
   const openTripModal = (trip) => {
     setSelectedTrip(trip)
     setIsTripModalOpen(true)
@@ -146,6 +148,9 @@ const MyPageView = () => {
     setIsTripModalOpen(false)
     setSelectedTrip(null)
   }
+
+
+
 
   return (
     <div className="br-container">
@@ -270,6 +275,9 @@ const MyPageView = () => {
         </div>
       </div>
 
+
+      {/* 마이페이지 찜한 장소 부분 */}
+
       <div className="section">
         <h3>찜한 장소 ({wishlist.length})</h3>
         {wishlistDestinations.length > 0 ? (
@@ -284,6 +292,9 @@ const MyPageView = () => {
           </div>
         )}
       </div>
+
+
+      {/* 마이페이지 나의 여행계획 부분 */}
 
       <div className="section">
         <h3>나의 여행 계획 ({trips.length})</h3>
@@ -308,6 +319,11 @@ const MyPageView = () => {
             }}>병합</button>
           </div>
         )}
+
+
+        {/* 여행계획 리스트부분! 
+        (버튼형식이라 클릭하면 여행경로 및 세부정보 모달창이 뜨도록 설계됨) */}
+
         {trips.length > 0 ? (
           <div className="trip-list">
             {trips.map((trip, index) => (
@@ -370,8 +386,7 @@ const MyPageView = () => {
                     </div>
                   )}
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         ) : (
           <div className="center">

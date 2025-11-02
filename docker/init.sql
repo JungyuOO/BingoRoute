@@ -71,18 +71,50 @@ CREATE TABLE IF NOT EXISTS my_vectors (
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- ############################################################
+-- 회원 관리 시스템
+-- ############################################################
+
+-- 회원 테이블
+CREATE TABLE IF NOT EXISTS accounts_user (
+    id BIGSERIAL PRIMARY KEY,
+    password VARCHAR(128) NOT NULL,
+    last_login TIMESTAMPTZ,
+    is_superuser BOOLEAN NOT NULL DEFAULT FALSE,
+    username VARCHAR(150) NOT NULL UNIQUE,
+    first_name VARCHAR(150) NOT NULL DEFAULT '',
+    last_name VARCHAR(150) NOT NULL DEFAULT '',
+    email VARCHAR(254) NOT NULL UNIQUE,
+    is_staff BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    date_joined TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    -- CustomUser 추가 필드들
+    user_id VARCHAR(50) NOT NULL UNIQUE,
+    birth_date DATE,
+    gender VARCHAR(1) CHECK (gender IN ('M', 'F', 'O')),
+    is_email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    email_verification_token VARCHAR(100) DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS ix_accounts_user_user_id ON accounts_user (user_id);
+CREATE INDEX IF NOT EXISTS ix_accounts_user_email ON accounts_user (email);
+CREATE INDEX IF NOT EXISTS ix_accounts_user_username ON accounts_user (username);
+
 -- 찜(jjim) 테이블
 CREATE TABLE IF NOT EXISTS jjim (
-    jjim_id      BIGSERIAL PRIMARY KEY,
     user_id      BIGINT NOT NULL,
     content_id   VARCHAR(100) NOT NULL,
-    jjim_on_off  BOOLEAN     NOT NULL,
     CONSTRAINT fk_jjim_content
         FOREIGN KEY (content_id)
         REFERENCES tourist_spot(content_id)
         ON UPDATE CASCADE
         ON DELETE CASCADE,
-    CONSTRAINT uq_user_content UNIQUE (user_id, content_id)
+    CONSTRAINT uq_user_content UNIQUE (user_id, content_id),
+    CONSTRAINT fk_jjim_user FOREIGN KEY (user_id)
+        REFERENCES accounts_user(id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 -- 회원별 여행 테이블
@@ -99,7 +131,10 @@ CREATE TABLE IF NOT EXISTS member_trip (
     trip_title  VARCHAR(100)     NOT NULL,
     travel_date DATE,
     created_at  TIMESTAMPTZ      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at  TIMESTAMPTZ      NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at  TIMESTAMPTZ      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_member_trip_user FOREIGN KEY (user_id)
+        REFERENCES accounts_user(id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 -- 각 여행별 관광지 테이블
@@ -155,4 +190,3 @@ CREATE TABLE IF NOT EXISTS accounts_user (
 CREATE INDEX IF NOT EXISTS ix_accounts_user_user_id ON accounts_user (user_id);
 CREATE INDEX IF NOT EXISTS ix_accounts_user_email ON accounts_user (email);
 CREATE INDEX IF NOT EXISTS ix_accounts_user_username ON accounts_user (username);
-
