@@ -243,6 +243,17 @@
   box-shadow: 0 0 0 2px rgba(94, 171, 162, 0.2);
 }
 
+/* ✅ 여행 계획 선택 모달 내 버튼 스타일 */
+.plan-select-modal .create-plan-button {
+  margin-top: 20px;
+  width: 100%;
+}
+
+.plan-select-modal .close-button {
+  margin-top: 8px;
+  width: 100%;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }

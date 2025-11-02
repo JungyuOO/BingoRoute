@@ -3,16 +3,16 @@ const ChatMessage = ({ role = 'assistant', children }) => {
   return (
     <div style={{ display: 'flex', justifyContent: isUser ? 'flex-end' : 'flex-start', marginBottom: 12 }}>
       {!isUser && (
-        <div style={{ width: 32, height: 32, borderRadius: 8, background: '#eef2ff', color: '#3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 8 }}>💼</div>
+        <div style={{ width: 30, height: 30, borderRadius: 8, background: '#eef2ff', color: '#3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>🤖</div>
       )}
       <div
         className="panel"
         style={{
-          maxWidth: '72%',
-          background: isUser ? '#111827' : '#ffffff',
+          maxWidth: '79%',
+          background: isUser ? '#FBBE0E' : '#ffffff',
           color: isUser ? '#fff' : 'inherit',
-          borderColor: isUser ? '#111827' : '#e5e7eb',
-          borderRadius: 12
+          borderColor: isUser ? '#FBBE0E' : '#e5e7eb',
+          borderRadius: 15
         }}
       >
         {children}

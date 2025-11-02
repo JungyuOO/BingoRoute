@@ -39,7 +39,7 @@ const HomePage = () => {
   //     try {
   //       const response = await fetch('http://localhost:8000/api/destinations/')
   //       const data = await response.json()
-  
+
   //       if (response.ok && data.success) {
   //         setDestinations(data.data)
   //       } else {
@@ -49,10 +49,10 @@ const HomePage = () => {
   //       console.error('⚠️ Django API 요청 오류:', error)
   //     }
   //   }
-  
+
   //   fetchDestinations()
   // }, [])
-  
+
 
   // 유니크 지역/테마 목록 생성
   const areas = Array.from(new Set(DESTINATIONS.map(d => d.area)))

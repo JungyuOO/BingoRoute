@@ -295,11 +295,34 @@
 .trip-actions-row { display:flex; gap:8px; margin-top:8px; }
 .trip-actions-row .btn-edit { padding:6px 10px; }
 .trip-actions-row .btn-save { padding:6px 10px; }
+
+/* 공유하기 버튼 style */
 .btn-share { background:#EDE9FE; color:#003651; border:1px solid #5EABA2; padding:6px 10px; border-radius:8px; cursor:pointer; }
 
+/* 다시계획하기 버튼 style */
+.btn-replan { 
+  background: #FBBE0E; 
+  color: #003651; 
+  border: 1px solid #FBBE0E; 
+  padding: 6px 10px; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.btn-replan:hover {
+  background: #E6A800;
+  border-color: #E6A800;
+  transform: translateY(-1px);
+}
+
+/* 시작일, 종료일 선택버튼 */
 .dates-row { display:flex; gap:8px; margin-top:8px; align-items:center; }
 .dates-row input[type="date"] { border:1.5px solid #5EABA2; border-radius:8px; padding:8px 10px; }
 
+
+
+/* 날씨 */
 .weather-badge {
   font-size: 12px;
   padding: 4px 8px;
@@ -335,6 +358,9 @@
   color: #003651;
 }
 
+
+
+
 .trip-button-content {
   display: flex;
   flex-direction: column;
@@ -343,15 +369,15 @@
 
 .trip-button-meta {
   display: flex;
-  gap: 12px;
-  font-size: 14px;
+  gap: 15px;
+  font-size: 15px;
   color: #5EABA2;
 }
 
 .trip-destinations {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 10px;
 }
 
 .destination-tag {
@@ -368,6 +394,8 @@
   color: #5EABA2;
   font-style: italic;
 }
+
+
 
 @media (max-width: 768px) {
   .section-header {
@@ -394,4 +422,80 @@
     flex-direction: column;
     gap: 4px;
   }
+}
+
+
+/* 병합 관련 스타일 */
+.merge-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0 16px;
+}
+
+.merge-label {
+  min-width: 72px;
+}
+
+.merge-select {
+  max-width: 220px;
+}
+
+/* 여행 버튼 관련 스타일 */
+.trip-button {
+  position: relative;
+}
+
+.status-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.destination-tag-editable {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.destination-remove-btn {
+  padding: 0 6px;
+}
+
+.delete-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.date-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* 여행 계획 수정 폼 스타일 */
+.edit-trip-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 12px;
+  background: rgba(94, 171, 162, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(94, 171, 162, 0.2);
+}
+
+.trip-title-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #003651;
+}
+
+.trip-title-label .form-input {
+  font-size: 14px;
+  font-weight: 500;
 }
