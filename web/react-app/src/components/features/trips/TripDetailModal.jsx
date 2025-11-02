@@ -1,20 +1,66 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from '../../ui'
-import { DESTINATIONS } from '../../../data/destinations'
+// 더미데이터 제거 - 실제 API 사용
 import './TripDetailModal.css'
 import '../destinations/DestinationDetailModal.css'
 
 const TripDetailModal = ({ trip, isOpen, onClose }) => {
+  const [destinations, setDestinations] = useState([])
+  const [loadingDestinations, setLoadingDestinations] = useState(false)
+  const [index, setIndex] = useState(0)
+
+  // 실제 API에서 관광지 데이터 가져오기
+  useEffect(() => {
+    if (!isOpen || !trip) return
+
+    const fetchDestinations = async () => {
+      try {
+        setLoadingDestinations(true)
+        const response = await fetch('http://localhost:8000/api/service/tourist_spots/')
+        const data = await response.json()
+
+        if (response.ok && Array.isArray(data.results)) {
+          // tourist_spot 테이블 데이터 사용
+          const transformedData = data.results.map(item => ({
+            id: item.content_id,
+            name: item.title,
+            area: item.area_name || item.category_name || '관광지', // tourist_spot_detail에서 가져온 지역 정보
+            rating: null, // tourist_spot 테이블에는 평점 정보 없음
+            duration: '2-3시간', // 기본값
+            tags: item.category_name ? [item.category_name] : ['관광지'],
+            short: item.title,
+            long: item.title,
+            image: item.firstimage || item.firstimage2,
+            phone: null,
+            closedDays: null,
+            operatingHours: null,
+            operatingSeason: null,
+            parking: null,
+            strollerFriendly: null,
+            petFriendly: null,
+            creditCard: null
+          }))
+          setDestinations(transformedData)
+        }
+      } catch (error) {
+        console.error('⚠️ 관광지 API 요청 오류:', error)
+        setDestinations([])
+      } finally {
+        setLoadingDestinations(false)
+      }
+    }
+
+    fetchDestinations()
+  }, [isOpen, trip])
+
   const steps = useMemo(() => {
     const ids = trip?.destinations || trip?.routes || []
     // map id or name to destination object
     return ids
-      .map((idOrName) => DESTINATIONS.find(d => d.id === idOrName || d.name === idOrName))
+      .map((idOrName) => destinations.find(d => d.id === idOrName || d.name === idOrName))
       .filter(Boolean)
-  }, [trip])
-
-  const [index, setIndex] = useState(0)
+  }, [trip, destinations])
 
   useEffect(() => {
     if (!isOpen) return
@@ -52,14 +98,16 @@ const TripDetailModal = ({ trip, isOpen, onClose }) => {
             <h2>{trip?.title || '내 여행 계획'}</h2>
             <ul className="destination-modal__tags" style={{marginTop:8}}>
               {(trip?.destinations || trip?.routes || []).map((t, i) => (
-                <li key={`${t}-${i}`}>{DESTINATIONS.find(d => d.id === t || d.name === t)?.name || t}</li>
+                <li key={`${t}-${i}`}>{destinations.find(d => d.id === t || d.name === t)?.name || t}</li>
               ))}
             </ul>
           </div>
           <button type="button" className="destination-modal__close" onClick={onClose} aria-label="닫기">×</button>
         </div>
 
-        {steps.length === 0 ? (
+        {loadingDestinations ? (
+          <div className="destination-modal__content">관광지 정보를 불러오는 중...</div>
+        ) : steps.length === 0 ? (
           <div className="destination-modal__content">경로가 비어있습니다.</div>
         ) : (
           <div className="destination-modal__content" style={{position:'relative',display:'grid',gridTemplateColumns:'40px 1fr 40px',gap:8}}>

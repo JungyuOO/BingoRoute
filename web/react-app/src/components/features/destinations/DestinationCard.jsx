@@ -1,4 +1,4 @@
-﻿import { useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../../../context/StoreContext'
 import { useAuth } from "../../../hooks/api/useAuth"
@@ -36,12 +36,14 @@ const DestinationCard = ({ destination }) => {
   }, [])
 
   const openModal = useCallback(() => {
+    console.log('🔓 모달 열기:', destination.name)
     setIsModalOpen(true)
-  }, [])
+  }, [destination.name])
 
   const closeModal = useCallback(() => {
+    console.log('🔒 모달 닫기:', destination.name)
     setIsModalOpen(false)
-  }, [])
+  }, [destination.name])
 
   const handleKeyDown = useCallback((event) => {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -59,7 +61,24 @@ const DestinationCard = ({ destination }) => {
         onClick={openModal}
         onKeyDown={handleKeyDown}
       >
-        <div className="img" aria-hidden />
+        <div className="img" aria-hidden>
+          {destination.image ? (
+            <>
+              <img
+                src={destination.image}
+                alt={destination.name}
+                loading="lazy"
+                onError={(e) => {
+                  // 이미지 로딩 실패 시 숨기기
+                  e.target.style.display = 'none'
+                }}
+              />
+              <div className="img-placeholder" />
+            </>
+          ) : (
+            <div className="img-placeholder" />
+          )}
+        </div>
         <div className="body">
           <div className="row">
             <strong>{destination.name}</strong>
@@ -78,7 +97,8 @@ const DestinationCard = ({ destination }) => {
             </button>
           </div>
           <div className="meta">
-            📍{destination.area} · ⭐ {destination.rating}
+            📍{destination.area}
+            {destination.rating && ` · ⭐ ${destination.rating}`}
           </div>
           <p className="muted">{destination.short}</p>
         </div>

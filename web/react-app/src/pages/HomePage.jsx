@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { DESTINATIONS } from '../data/destinations'
 import { WeatherSection } from '../components/features/weather'
 import { DestinationsFilter, DestinationsGrid } from '../components/features/destinations'
 import HeroSection from "../components/features/home/HeroSection";
@@ -14,11 +13,9 @@ const HomePage = () => {
   const { weatherData, loading } = useWeather()
   const navigate = useNavigate()
 
-  // ⭐ 여행지 데이터를 저장할 상태, React가 여행 데이터 기억 및 관리할 공간
-  // destinations -> 화면에서 사용할 실제 데이터 목록
-  // setDestinations -> API 호출 후 데이터 업로드 시 사용
-  // useState(DESTINATIONS || []) -> API 연결 전) 더미데이터 임시 사용, 연결 후) API 데이터로 덮어씀
-  const [destinations, setDestinations] = useState(DESTINATIONS || [])
+  // ⭐ 실제 관광지 데이터를 저장할 상태
+  const [destinations, setDestinations] = useState([])
+  const [loading_destinations, setLoadingDestinations] = useState(true)
 
   const [filter, setFilter] = useState('')
   // 추천 여행지 필터링: 지역/테마
@@ -26,38 +23,59 @@ const HomePage = () => {
   const [selectedTheme, setSelectedTheme] = useState('ALL')
   const [selectedDistrict, setSelectedDistrict] = useState('강남구')
 
-  // ⭐ Django API 연동 전 임시 예외 처리
+  // ⭐ 실제 관광지 API 연동
   useEffect(() => {
-    if (DESTINATIONS.length === 0) {
-      console.warn('⚠️ Django API 미연동 상태 — 여행지 데이터 없음')
+    const fetchDestinations = async () => {
+      try {
+        setLoadingDestinations(true)
+        console.log('🔄 관광지 데이터 요청 시작...')
+        const response = await fetch('http://localhost:8000/api/service/tourist_spots/')
+        const data = await response.json()
+        console.log('📊 API 응답:', { status: response.status, dataCount: data.results?.length || 0 })
+
+        if (response.ok && data.results && Array.isArray(data.results)) {
+          // tourist_spot 테이블 데이터 사용
+          const transformedData = data.results.map(item => ({
+            id: item.content_id,
+            name: item.title,
+            area: item.area_name || item.category_name || '관광지', // tourist_spot_detail에서 가져온 지역 정보
+            rating: null, // tourist_spot 테이블에는 평점 정보 없음
+            duration: '2-3시간', // 기본값
+            tags: item.category_name ? [item.category_name] : ['관광지'],
+            short: item.title,
+            long: item.title,
+            image: item.firstimage || item.firstimage2,
+            // 상세 정보
+            phone: null,
+            closedDays: null,
+            operatingHours: null,
+            operatingSeason: null,
+            parking: null,
+            strollerFriendly: null,
+            petFriendly: null,
+            creditCard: null
+          }))
+          setDestinations(transformedData)
+          console.log('✅ 관광지 데이터 로드 완료:', transformedData.length + '개')
+        } else {
+          console.error('❌ 관광지 데이터 불러오기 실패:', data)
+          setDestinations([])
+        }
+      } catch (error) {
+        console.error('⚠️ 관광지 API 요청 오류:', error)
+        setDestinations([])
+      } finally {
+        setLoadingDestinations(false)
+      }
     }
+
+    fetchDestinations()
   }, [])
-
-  // ⭐ Django API 연동시킬 때 활성화
-  // useEffect(() => {
-  //   const fetchDestinations = async () => {
-  //     try {
-  //       const response = await fetch('http://localhost:8000/api/destinations/')
-  //       const data = await response.json()
-
-  //       if (response.ok && data.success) {
-  //         setDestinations(data.data)
-  //       } else {
-  //         console.error('❌ 여행지 데이터 불러오기 실패:', data.error)
-  //       }
-  //     } catch (error) {
-  //       console.error('⚠️ Django API 요청 오류:', error)
-  //     }
-  //   }
-
-  //   fetchDestinations()
-  // }, [])
 
 
   // 유니크 지역/테마 목록 생성
-  const areas = Array.from(new Set(DESTINATIONS.map(d => d.area)))
-  // const areas = Array.from(new Set(destinations.map(d => d.area))) ⭐ API 연동 시 위 코드 지우고 이 코드 활성화
-  const themes = Array.from(new Set(DESTINATIONS.flatMap(d => d.tags)))
+  const areas = Array.from(new Set(destinations.map(d => d.area)))
+  const themes = Array.from(new Set(destinations.flatMap(d => d.tags)))
 
   // 첫 번째 구를 기본 선택
   useEffect(() => {
@@ -81,7 +99,7 @@ const HomePage = () => {
     navigate('/planner')
   }
 
-  const filteredDestinations = DESTINATIONS.filter(d => {
+  const filteredDestinations = destinations.filter(d => {
     const areaOk = selectedArea === 'ALL' || d.area === selectedArea
     const themeOk = selectedTheme === 'ALL' || d.tags.includes(selectedTheme)
 
@@ -114,15 +132,27 @@ const HomePage = () => {
 
       <div className="section">
         <h2>추천 여행지</h2>
-        <DestinationsFilter
-          areas={areas}
-          themes={themes}
-          selectedArea={selectedArea}
-          selectedTheme={selectedTheme}
-          onAreaChange={setSelectedArea}
-          onThemeChange={setSelectedTheme}
-        />
-        <DestinationsGrid items={filteredDestinations} />
+        {loading_destinations ? (
+          <div style={{ textAlign: 'center', padding: '2rem' }}>
+            <p>관광지 정보를 불러오는 중...</p>
+          </div>
+        ) : destinations.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '2rem' }}>
+            <p>관광지 정보를 불러올 수 없습니다.</p>
+          </div>
+        ) : (
+          <>
+            <DestinationsFilter
+              areas={areas}
+              themes={themes}
+              selectedArea={selectedArea}
+              selectedTheme={selectedTheme}
+              onAreaChange={setSelectedArea}
+              onThemeChange={setSelectedTheme}
+            />
+            <DestinationsGrid items={filteredDestinations} />
+          </>
+        )}
       </div>
     </div>
   )

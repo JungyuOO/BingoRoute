@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './MyPageView.css'
 import '../components/features/destinations/Destinations.css'
 import DestinationCard from '../components/features/destinations/DestinationCard'
 import TripDetailModal from '../components/features/trips/TripDetailModal'
 import { useStore } from '../context/StoreContext'
-import { DESTINATIONS } from '../data/destinations'
+// 더미데이터 제거 - 실제 API 사용
 
 const MyPageView = () => {
   const { session, setSession, wishlist, trips, removeDestinationFromTrip, deleteTrip, mergeTrips, updateTrip, replanTrip } = useStore()
@@ -14,10 +14,54 @@ const MyPageView = () => {
   const [editingTripId, setEditingTripId] = useState(null)
   const [mergeTarget, setMergeTarget] = useState('')
   const [mergeSource, setMergeSource] = useState('')
+  const [destinations, setDestinations] = useState([])
+  const [loadingDestinations, setLoadingDestinations] = useState(true)
   const [editForm, setEditForm] = useState({
     name: session?.name || session?.first_name || '',
     email: session?.email || ''
   })
+
+  // 실제 API에서 관광지 데이터 가져오기
+  useEffect(() => {
+    const fetchDestinations = async () => {
+      try {
+        setLoadingDestinations(true)
+        const response = await fetch('http://localhost:8000/api/service/tourist_spots/')
+        const data = await response.json()
+
+        if (response.ok && Array.isArray(data.results)) {
+          // tourist_spot 테이블 데이터 사용
+          const transformedData = data.results.map(item => ({
+            id: item.content_id,
+            name: item.title,
+            area: item.area_name || item.category_name || '관광지', // tourist_spot_detail에서 가져온 지역 정보
+            rating: null, // tourist_spot 테이블에는 평점 정보 없음
+            duration: '2-3시간', // 기본값
+            tags: item.category_name ? [item.category_name] : ['관광지'],
+            short: item.title,
+            long: item.title,
+            image: item.firstimage || item.firstimage2,
+            phone: null,
+            closedDays: null,
+            operatingHours: null,
+            operatingSeason: null,
+            parking: null,
+            strollerFriendly: null,
+            petFriendly: null,
+            creditCard: null
+          }))
+          setDestinations(transformedData)
+        }
+      } catch (error) {
+        console.error('⚠️ 관광지 API 요청 오류:', error)
+        setDestinations([])
+      } finally {
+        setLoadingDestinations(false)
+      }
+    }
+
+    fetchDestinations()
+  }, [])
 
   const handleEditStart = () => {
     setEditForm({
@@ -65,7 +109,7 @@ const MyPageView = () => {
     )
   }
 
-  const wishlistDestinations = DESTINATIONS.filter(d => wishlist.includes(d.id))
+  const wishlistDestinations = destinations.filter(d => wishlist.includes(d.id))
 
   const getWeatherScoreClass = (score) => {
     if (score >= 80) return 'excellent'
@@ -125,7 +169,7 @@ const MyPageView = () => {
   // 여행계획 공유하기 -> 해당 여행계획의 url이 복사됨.
   const shareTrip = async (trip) => {
     const names = (trip.destinations || trip.routes || []).map(d => {
-      const m = DESTINATIONS.find(x => x.id === d || x.name === d)
+      const m = destinations.find(x => x.id === d || x.name === d)
       return m?.name || d
     })
     const text = `여행 계획: ${trip.title}\n기간: ${formatDateRange(trip)}\n경로: ${names.join(' > ')}`
@@ -230,7 +274,11 @@ const MyPageView = () => {
 
       <div className="section">
         <h3>찜한 장소 ({wishlist.length})</h3>
-        {wishlistDestinations.length > 0 ? (
+        {loadingDestinations ? (
+          <div className="center">
+            <p>관광지 정보를 불러오는 중...</p>
+          </div>
+        ) : wishlistDestinations.length > 0 ? (
           <div className="cards">
             {wishlistDestinations.map(destination => (
               <DestinationCard key={destination.id} destination={destination} />
@@ -321,7 +369,7 @@ const MyPageView = () => {
                     <div className="trip-destinations">
                       {(trip.destinations || trip.routes || []).length > 0 ? (
                         (trip.destinations || trip.routes).map((d, i) => {
-                          const dest = DESTINATIONS.find(x => x.id === d || x.name === d)
+                          const dest = destinations.find(x => x.id === d || x.name === d)
                           return (
                             <span key={`${d}-${i}`} className="destination-tag destination-tag-editable">
                               {dest?.name || d}

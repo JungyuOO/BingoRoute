@@ -100,6 +100,21 @@
   margin-bottom: 20px;
 }
 
+.modal-hero__image {
+  width: 100%;
+  height: 200px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.modal-hero__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .modal-hero__tags {
   margin-bottom: 8px;
 }

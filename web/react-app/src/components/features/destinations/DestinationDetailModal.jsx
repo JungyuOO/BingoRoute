@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from '../../ui'
 import { useAuth } from '../../../hooks/api/useAuth'
@@ -15,6 +15,64 @@ const DestinationDetailModal = ({
   const { isAuthenticated, promptLogin } = useAuth()
   const [showPlanModal, setShowPlanModal] = useState(false)
   const { addDestinationToTrip, trips } = useStore()
+  const [destinationDetails, setDestinationDetails] = useState(null)
+  const [loadingDetails, setLoadingDetails] = useState(false)
+
+  // 🔹 상세 정보 API 호출
+  useEffect(() => {
+    if (isOpen && destination?.id) {
+      const fetchDestinationDetails = async () => {
+        try {
+          setLoadingDetails(true)
+          console.log('🔄 관광지 상세정보 요청:', destination.id)
+          const response = await fetch(`http://localhost:8000/api/service/tourist_spots/detail/${destination.id}/`)
+          const data = await response.json()
+          console.log('📊 상세정보 API 응답:', { status: response.status, data })
+
+          if (response.ok && data.results && Array.isArray(data.results)) {
+            // 상세 정보를 객체로 변환 (TouristDetail 테이블 필드명 사용)
+            const details = {}
+            
+            // 여러 레코드에서 정보를 수집 (같은 content_id에 대해 여러 상세정보가 있을 수 있음)
+            data.results.forEach(item => {
+              // 기본 정보
+              if (item.tel) details.phone = item.tel
+              if (item.restdate) details.closedDays = item.restdate
+              if (item.usetime) details.operatingHours = item.usetime
+              if (item.useseason) details.operatingSeason = item.useseason
+              if (item.address) details.address = item.address
+              
+              // 편의시설 정보 (문자열 '1' 또는 '0'으로 저장됨)
+              if (item.is_parking) details.parking = item.is_parking === '1' || item.is_parking === 1
+              if (item.is_baby_carriage) details.strollerFriendly = item.is_baby_carriage === '1' || item.is_baby_carriage === 1
+              if (item.is_pet) details.petFriendly = item.is_pet === '1' || item.is_pet === 1
+              if (item.is_credit_card) details.creditCard = item.is_credit_card === '1' || item.is_credit_card === 1
+              
+              // 추가 정보 텍스트
+              if (item.info_text) {
+                if (!details.descriptions) details.descriptions = []
+                details.descriptions.push({
+                  name: item.info_name || '정보',
+                  text: item.info_text
+                })
+              }
+            })
+            
+            setDestinationDetails(details)
+            console.log('✅ 상세정보 로드 완료:', details)
+          } else {
+            console.log('❌ 상세정보 응답 형식 오류:', data)
+          }
+        } catch (error) {
+          console.error('⚠️ 관광지 상세정보 API 요청 오류:', error)
+        } finally {
+          setLoadingDetails(false)
+        }
+      }
+
+      fetchDestinationDetails()
+    }
+  }, [isOpen, destination?.id])
 
   // 🔹 로그인 안 돼있으면 로그인 유도
   const handlePlannerAdd = () => {
@@ -49,11 +107,16 @@ const DestinationDetailModal = ({
     onClose()
   }
 
-  if (!isOpen || typeof document === 'undefined') return null
+  if (!isOpen || typeof document === 'undefined') {
+    console.log('🚫 모달 렌더링 조건:', { isOpen, hasDocument: typeof document !== 'undefined' })
+    return null
+  }
+
+  console.log('✅ 모달 렌더링 중:', destination?.name)
   const modalRoot = document.getElementById('modal-root') || document.body
 
   return createPortal(
-    (
+    <>
       <div
         className="destination-modal__backdrop"
         onClick={handleBackdropClick}
@@ -72,6 +135,17 @@ const DestinationDetailModal = ({
 
           <div className="destination-modal__content">
             <div className="modal-hero">
+              {destination.image && (
+                <div className="modal-hero__image">
+                  <img 
+                    src={destination.image} 
+                    alt={destination.name}
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                    }}
+                  />
+                </div>
+              )}
               <div className="modal-hero__tags">
                 {destination.tags?.map(tag => (
                   <span key={tag} className="modal-tag">{tag}</span>
@@ -79,27 +153,52 @@ const DestinationDetailModal = ({
               </div>
               <h2 className="modal-hero__title">{destination.name}</h2>
               <p className="modal-hero__meta">
-                📍{destination.area} · ⭐ {destination.rating}
+                📍{destinationDetails?.area || destination.area}
+                {destination.rating && ` · ⭐ ${destination.rating}`}
               </p>
             </div>
 
             <div className="modal-section">
               <h3>상세 정보</h3>
-              <p>{destination.long || destination.short}</p>
+              {loadingDetails ? (
+                <p>상세 정보를 불러오는 중...</p>
+              ) : (
+                <>
+                  {destinationDetails?.descriptions && destinationDetails.descriptions.length > 0 ? (
+                    destinationDetails.descriptions.map((desc, index) => (
+                      <div key={index} style={{ marginBottom: '1rem' }}>
+                        <h4 style={{ fontSize: '0.9rem', color: '#5EABA2', marginBottom: '0.5rem' }}>
+                          {desc.name}
+                        </h4>
+                        <p>{desc.text}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p>{destination.long || destination.short}</p>
+                  )}
+                  {destinationDetails?.address && (
+                    <p><strong>주소:</strong> {destinationDetails.address}</p>
+                  )}
+                </>
+              )}
             </div>
 
             <div className="modal-section">
               <h3>방문 정보</h3>
-              <div className="modal-info-grid">
-                <div><strong>전화번호</strong><p>{destination.phone || '정보 없음'}</p></div>
-                <div><strong>휴무일</strong><p>{destination.closedDays || '정보 없음'}</p></div>
-                <div><strong>운영시간</strong><p>{destination.operatingHours || '정보 없음'}</p></div>
-                <div><strong>운영계절</strong><p>{destination.operatingSeason || '정보 없음'}</p></div>
-                <div><strong>주차장</strong><p>{destination.parking ? '이용 가능' : '이용 불가'}</p></div>
-                <div><strong>유모차</strong><p>{destination.strollerFriendly ? '이용 가능' : '이용 불가'}</p></div>
-                <div><strong>반려동물 입장</strong><p>{destination.petFriendly ? '입장 가능' : '입장 불가'}</p></div>
-                <div><strong>신용카드</strong><p>{destination.creditCard ? '사용 가능' : '사용 불가'}</p></div>
-              </div>
+              {loadingDetails ? (
+                <p>방문 정보를 불러오는 중...</p>
+              ) : (
+                <div className="modal-info-grid">
+                  <div><strong>전화번호</strong><p>{destinationDetails?.phone || '정보 없음'}</p></div>
+                  <div><strong>휴무일</strong><p>{destinationDetails?.closedDays || '정보 없음'}</p></div>
+                  <div><strong>운영시간</strong><p>{destinationDetails?.operatingHours || '정보 없음'}</p></div>
+                  <div><strong>운영계절</strong><p>{destinationDetails?.operatingSeason || '정보 없음'}</p></div>
+                  <div><strong>주차장</strong><p>{destinationDetails?.parking !== undefined ? (destinationDetails.parking ? '이용 가능' : '이용 불가') : '정보 없음'}</p></div>
+                  <div><strong>유모차</strong><p>{destinationDetails?.strollerFriendly !== undefined ? (destinationDetails.strollerFriendly ? '이용 가능' : '이용 불가') : '정보 없음'}</p></div>
+                  <div><strong>반려동물 입장</strong><p>{destinationDetails?.petFriendly !== undefined ? (destinationDetails.petFriendly ? '입장 가능' : '입장 불가') : '정보 없음'}</p></div>
+                  <div><strong>신용카드</strong><p>{destinationDetails?.creditCard !== undefined ? (destinationDetails.creditCard ? '사용 가능' : '사용 불가') : '정보 없음'}</p></div>
+                </div>
+              )}
             </div>
 
             <div className="destination-modal__actions">
@@ -150,7 +249,7 @@ const DestinationDetailModal = ({
           </div>
         )}
       </div>
-    ),
+    </>,
     modalRoot
   )
 }
