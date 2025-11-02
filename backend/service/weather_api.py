@@ -1,14 +1,57 @@
 import datetime
+from urllib.parse import unquote
+
 import requests
 import pandas as pd
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from django.conf import settings
 
 # 🔑 공공데이터포털 서비스 키 (settings에서 관리)
-API_KEY = getattr(
+_RAW_API_KEY = getattr(
     settings,
     'WEATHER_API_KEY',
     "L+tc+wRhGVm81bYY85f7Y0yOgk52KcfFi/DrgCBIKxq9b3MXSRwzVpMS2jvMrgxI6WmVq1B92LPY4odZw7z9BQ==",
 )
+API_KEY = unquote(_RAW_API_KEY or "")
+
+REQUEST_TIMEOUT = (5, 25)  # (connect timeout, read timeout)
+RETRY_STRATEGY = Retry(
+    total=3,
+    status_forcelist=(500, 502, 503, 504),
+    allowed_methods=("GET",),
+    backoff_factor=1.5,
+    raise_on_status=False,
+)
+SESSION = requests.Session()
+SESSION.mount("https://", HTTPAdapter(max_retries=RETRY_STRATEGY))
+SESSION.mount("http://", HTTPAdapter(max_retries=RETRY_STRATEGY))
+
+
+def _request_json(url: str, params: dict, label: str) -> dict:
+    try:
+        response = SESSION.get(url, params=params, timeout=REQUEST_TIMEOUT)
+        print(f"🔍 {label} API 응답 상태: {response.status_code}")
+        response.raise_for_status()
+        data = response.json()
+    except requests.exceptions.Timeout:
+        print(f"❌ {label} 요청이 타임아웃되었습니다 (timeout={REQUEST_TIMEOUT}).")
+        raise
+    except requests.RequestException as exc:
+        body = ""
+        if exc.response is not None:
+            try:
+                body = exc.response.text
+            except Exception:
+                body = "<응답 본문 읽기 실패>"
+        print(f"❌ {label} 요청 오류: {exc}. 응답 본문: {body}")
+        raise
+    except ValueError:
+        print("❌ 응답을 JSON으로 파싱하지 못했습니다.")
+        raise
+    else:
+        print(f"🔍 {label} API 응답 데이터: {data}")
+        return data
 
 # 서울 구별 격자 좌표
 SEOUL_GU = {
@@ -45,18 +88,14 @@ def get_current_weather(nx, ny):
         )
     )
 
-    url = "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst"
+    url = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst"
     params = {
         "serviceKey": API_KEY, "pageNo": "1", "numOfRows": "1000", "dataType": "JSON",
         "base_date": base_date, "base_time": base_time, "nx": nx, "ny": ny
     }
 
     try:
-        response = requests.get(url, params=params, timeout=10)
-        response_data = response.json()
-        print(f"🔍 API 응답 상태: {response.status_code}")
-        print(f"🔍 API 응답 데이터: {response_data}")
-
+        response_data = _request_json(url, params, "현재 날씨")
         if 'response' not in response_data:
             print("❌ 응답에 'response' 키가 없습니다")
             return None
@@ -69,7 +108,6 @@ def get_current_weather(nx, ny):
         items = response_data['response']['body']['items']['item']
     except Exception as e:
         print(f"❌ 현재 날씨 조회 오류: {e}")
-        print(f"🔍 응답 내용: {response.text if 'response' in locals() else 'No response'}")
         return None
 
     data = {}
@@ -119,16 +157,14 @@ def get_short_forecast(nx, ny):
         )
     )
 
-    url = "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst"
+    url = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst"
     params = {
         "serviceKey": API_KEY, "pageNo": "1", "numOfRows": "1000", "dataType": "JSON",
         "base_date": base_date, "base_time": base_time, "nx": nx, "ny": ny
     }
 
     try:
-        response = requests.get(url, params=params, timeout=10)
-        response_data = response.json()
-        print(f"🔍 단기예보 API 응답 상태: {response.status_code}")
+        response_data = _request_json(url, params, "단기예보")
 
         if 'response' not in response_data:
             print("❌ 단기예보 응답에 'response' 키가 없습니다")
@@ -142,7 +178,6 @@ def get_short_forecast(nx, ny):
         items = response_data['response']['body']['items']['item']
     except Exception as e:
         print(f"❌ 단기예보 조회 오류: {e}")
-        print(f"🔍 응답 내용: {response.text if 'response' in locals() else 'No response'}")
         return []
 
     forecast = []
@@ -174,8 +209,8 @@ def get_mid_forecast(region_id="11B10101"):
 
     base_date = forecast_time
 
-    url_land = "http://apis.data.go.kr/1360000/MidFcstInfoService/getMidLandFcst"
-    url_temp = "http://apis.data.go.kr/1360000/MidFcstInfoService/getMidTa"
+    url_land = "https://apis.data.go.kr/1360000/MidFcstInfoService/getMidLandFcst"
+    url_temp = "https://apis.data.go.kr/1360000/MidFcstInfoService/getMidTa"
     params = {
         "serviceKey": API_KEY, "pageNo": "1", "numOfRows": "10", "dataType": "JSON",
         "regId": region_id, "tmFc": base_date
@@ -184,10 +219,7 @@ def get_mid_forecast(region_id="11B10101"):
     try:
         print(f"🔍 중기예보 요청: region_id={region_id}, tmFc={base_date}")
 
-        land_response = requests.get(url_land, params=params, timeout=10)
-        land_data = land_response.json()
-        print(f"🔍 중기예보(육상) API 응답 상태: {land_response.status_code}")
-        print(f"🔍 중기예보(육상) API 응답: {land_data}")
+        land_data = _request_json(url_land, params, "중기예보(육상)")
 
         if 'response' not in land_data or 'body' not in land_data['response']:
             print("❌ 중기예보(육상) 응답에 'body' 키가 없습니다")
@@ -195,9 +227,7 @@ def get_mid_forecast(region_id="11B10101"):
 
         land_item = land_data['response']['body']['items']['item'][0]
 
-        temp_response = requests.get(url_temp, params=params, timeout=10)
-        temp_data = temp_response.json()
-        print(f"🔍 중기예보(기온) API 응답 상태: {temp_response.status_code}")
+        temp_data = _request_json(url_temp, params, "중기예보(기온)")
 
         if 'response' not in temp_data or 'body' not in temp_data['response']:
             print("❌ 중기예보(기온) 응답에 'body' 키가 없습니다")
