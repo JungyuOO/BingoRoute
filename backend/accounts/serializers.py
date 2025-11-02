@@ -14,7 +14,7 @@ User = get_user_model()  # CustomUser 모델 사용
             summary='사용자 정보 응답 예시',
             description='로그인 성공 시 반환되는 사용자 정보',
             value={
-                "id": 1,
+                "id": "testuser123",
                 "user_id": "testuser123",
                 "email": "test@example.com",
                 "name": "홍길동",
@@ -101,6 +101,7 @@ class SignupSerializer(serializers.Serializer):
         try:
             user = User.objects.create_user(
                 username=user_id,  # AbstractUser의 username 필드
+                id=user_id,
                 user_id=user_id,   # 커스텀 필드
                 email=email,
                 password=password,

@@ -52,7 +52,7 @@ def signup(request):
             value={
                 "access": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
                 "user": {
-                    "id": 1,
+                    "id": "testuser123",
                     "user_id": "testuser123",
                     "email": "test@example.com",
                     "name": "홍길동",
