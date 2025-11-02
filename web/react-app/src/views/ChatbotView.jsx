@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { ChatHeader, ChatMessage, QuickReplies, ChatInput } from '../components/features/chat'
 import './ChatbotView.css'
 import DestinationDetailModal from "../components/features/destinations/DestinationDetailModal";
+const API_BASE = import.meta.env.VITE_API_BASE || '' // e.g., 'http://localhost:8000'
 
 
 const INITIAL_CHIPS = [
@@ -12,85 +13,90 @@ const INITIAL_CHIPS = [
   '전통 체험'
 ]
 
-// ⭐ 홈화면 추천 여행지 API 구조를 가정한 mock 데이터
-// (나중에 API 응답 예시와 1:1로 맞출 수 있음)
-const MOCK_DESTINATIONS = {
-  history: [
-    { id: 1, name: '경복궁', image: '/images/gyeongbokgung.jpg', desc: '조선의 대표 궁궐, 근정전과 경회루는 필수 코스!' },
-    { id: 2, name: '북촌 한옥마을', image: '/images/bukchon.jpg', desc: '전통 한옥 거리와 한복 체험 스팟이 가득해요.' },
-    { id: 3, name: '서촌', image: '/images/seochon.jpg', desc: '감성 카페와 전통 골목이 어우러진 힐링 명소.' },
-    { id: 4, name: '덕수궁 돌담길', image: '/images/deoksu.jpg', desc: '도심 속 역사 산책로, 사진 명소로 유명해요.' }
-  ],
-  food: [
-    { id: 1, name: '명동거리', image: '/images/myeongdong.jpg', desc: '쇼핑과 길거리 음식의 천국! 외국인 관광객 인기 No.1' },
-    { id: 2, name: '남대문시장', image: '/images/namdaemun.jpg', desc: '서울 대표 재래시장, 볼거리와 먹거리 가득!' },
-    { id: 3, name: '광장시장', image: '/images/gwangjang.jpg', desc: '빈대떡과 마약김밥으로 유명한 전통 시장.' },
-    { id: 4, name: '홍대입구', image: '/images/hongdae.jpg', desc: '젊음의 거리, 예술과 맛집이 공존하는 핫플.' }
-  ],
-  nature: [
-    { id: 1, name: '서울숲', image: '/images/seoulforest.jpg', desc: '도심 속 자연의 오아시스 🌳 사슴 먹이주기도 가능!' },
-    { id: 2, name: '하늘공원', image: '/images/skypark.jpg', desc: '억새와 노을이 멋진 사진 명소.' },
-    { id: 3, name: '북서울 꿈의숲', image: '/images/dreamforest.jpg', desc: '전망대와 산책 코스가 아름다운 힐링 명소.' },
-    { id: 4, name: '뚝섬 한강공원', image: '/images/tteuksom.jpg', desc: '피크닉과 자전거 코스로 인기 많아요.' }
-  ],
-  hotplace: [
-    { id: 1, name: '성수동', image: '/images/seongsu.jpg', desc: '리모델링 카페와 팝업스토어의 천국!' },
-    { id: 2, name: '연남동', image: '/images/yeonnam.jpg', desc: '감성 카페거리와 예쁜 소품샵이 가득한 동네.' },
-    { id: 3, name: '한남동', image: '/images/hannam.jpg', desc: '트렌디한 브랜드숍과 갤러리가 즐비한 곳.' },
-    { id: 4, name: '익선동', image: '/images/ikseon.jpg', desc: '전통 한옥과 현대 감성이 어우러진 힙한 거리.' }
-  ],
-  tradition: [
-    { id: 1, name: '인사동', image: '/images/insadong.jpg', desc: '전통 찻집과 공예 체험이 가능한 서울의 대표 거리.' },
-    { id: 2, name: '남산골 한옥마을', image: '/images/namsangol.jpg', desc: '전통 공연과 한복 체험이 가능한 문화 공간.' },
-    { id: 3, name: '국립고궁박물관', image: '/images/museum.jpg', desc: '조선 왕실의 유물과 전통문화를 전시.' },
-    { id: 4, name: '한국의집', image: '/images/koreahouse.jpg', desc: '전통음식과 공연을 함께 즐길 수 있는 공간.' }
-  ]
-}
+// 백엔드 관광지/날씨 API 연결 설정
+const FALLBACK_IMAGE = 'https://placehold.co/300x200?text=No+Image'
+// label: UI 문구, query: DB category_name 부분문자열, keywords: 입력 키워드
+const CATEGORY_RULES = [
+  { label: '역사와 문화 탐방', query: '고궁', keywords: ['역사', '문화', '고궁', '궁', '경복궁', '북촌', '한옥'] },
+  { label: '쇼핑과 맛집 투어', query: '시장', keywords: ['쇼핑', '맛집', '시장', '명동', '남대문', '광장시장'] },
+  { label: '자연과 힐링', query: '공원', keywords: ['자연', '힐링', '공원', '숲', '산책'] },
+  { label: '핫플레이스 탐방', query: '문화거리', keywords: ['핫플', '핫플레이스', '성수', '연남', '한남'] },
+  { label: '전통 체험', query: '체험', keywords: ['전통', '체험', '한복', '공예'] },
+]
 
 const systemGreeting = (
-  <>
-    <p style={{ margin: 0 }}>안녕하세요! 빙고루트 AI 여행 플래너입니다. ✨</p>
-    <p style={{ margin: '6px 0 0 0' }}>서울에서의 완벽한 여행 계획을 함께 세워보아요!</p>
-    <p style={{ margin: '6px 0 0 0' }}>어떤 스타일의 여행을 원하시나요?</p>
-  </>
+  <div className="system-greeting">
+    <p>안녕하세요! 빙고루트 AI 여행 플래너입니다. ✨</p>
+    <p>서울에서의 완벽한 여행 계획을 함께 세워보아요!</p>
+    <p>어떤 스타일의 여행을 원하시나요?</p>
+  </div>
 )
 
-// ⭐ 수정된 mockReply (이제 카드 데이터도 함께 반환)
-const mockReply = (text) => {
-  if (text.includes('역사') || text.includes('문화')) {
-    return {
-      message: '경복궁, 북촌 한옥마을, 서촌 일대를 중심으로 코스를 추천해요. 📸 한복 대여와 사진 스팟도 함께 안내드릴게요!',
-      cards: MOCK_DESTINATIONS.history
+
+  const detectCategory = (text) => {
+    const t = (text || '').toLowerCase()
+    return (
+      CATEGORY_RULES.find((r) => r.keywords.some((k) => t.includes(k.toLowerCase())) ) || null
+    )
+  }
+
+const shouldAskWeather = (text) => {
+  const t = (text || '').toLowerCase()
+  return ['날씨', '비', '우산', '기온', '온도', 'weather'].some((k) => t.includes(k))
+}
+
+const requestJson = async (url, options = {}) => {
+  const res = await fetch(url, { credentials: 'include', ...options })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    const error = new Error(`HTTP ${res.status}`)
+    error.responseText = text
+    throw error
+  }
+  return res.json()
+}
+
+const fetchTouristSpots = async (categoryQuery) => {
+  const params = new URLSearchParams()
+  if (categoryQuery) params.append('category_name', categoryQuery)
+  const data = await requestJson(`${API_BASE}/api/service/tourist_spots/${params.toString() ? `?${params}` : ''}`)
+  return Array.isArray(data) ? data : Array.isArray(data?.results) ? data.results : []
+}
+  const fetchTouristSpotsFallback = async () => {
+    // 백엔드 오류 대비: 무필터 조회 시도
+    try {
+      return await fetchTouristSpots()
+    } catch (e) {
+      console.error('tourist_spots fallback도 실패:', e)
+      return []
     }
   }
-  if (text.includes('쇼핑') || text.includes('맛집')) {
-    return {
-      message: '명동-남대문-회현동 라인을 따라 쇼핑과 맛집을 함께 즐겨보세요. 🛍️ 비 오는 날에도 좋아요!',
-      cards: MOCK_DESTINATIONS.food
-    }
-  }
-  if (text.includes('자연') || text.includes('힐링')) {
-    return {
-      message: '서울숲-뚝섬 한강공원 코스로 여유로운 산책을 추천합니다. 🌿 카페와 피크닉 스팟도 함께 알려드릴게요.',
-      cards: MOCK_DESTINATIONS.nature
-    }
-  }
-  if (text.includes('핫플') || text.includes('핫플레이스')) {
-    return {
-      message: '성수-연남-한남 핫플 투어로 트렌디한 공간들을 둘러보는 코스를 짜드릴게요. 💫',
-      cards: MOCK_DESTINATIONS.hotplace
-    }
-  }
-  if (text.includes('전통')) {
-    return {
-      message: '인사동-익선동-낙원상가를 잇는 전통 체험 루트를 추천합니다. 🏮 공예 체험과 전통 다과 코스도 가능해요.',
-      cards: MOCK_DESTINATIONS.tradition
-    }
-  }
-  return {
-    message: '좋아요! 선호하시는 기간과 동행, 예산을 알려주시면 맞춤 코스를 제안드릴게요.',
-    cards: []
-  }
+
+const buildCards = (spots, intro) => {
+  const cards = spots.slice(0, 8).map((s) => ({
+    id: s.content_id,
+    contentId: s.content_id,
+    name: s.title,
+    image: s.firstimage || s.firstimage2 || FALLBACK_IMAGE,
+    desc: intro || (s.category_name || ''),
+  }))
+  return cards
+}
+
+// 상세 정보 보강 유틸
+const toBool = (v) => {
+  if (v === true) return true
+  if (v === false) return false
+  if (v == null) return false
+  const s = String(v).trim().toLowerCase()
+  if (!s) return false
+  if (['0', 'n', 'no', 'false', '불가', '없음'].some(t => s === t || s.includes(t))) return false
+  return ['1', 'y', 'yes', 'true', '가능', 'o', 'ok'].some(t => s === t || s.includes(t))
+}
+
+const fetchSpotDetail = async (contentId) => {
+  const data = await requestJson(`${API_BASE}/api/service/tourist_spots/detail/${contentId}/`)
+  return Array.isArray(data) ? data : Array.isArray(data?.results) ? data.results : []
 }
 
 const ChatbotView = () => {
@@ -98,44 +104,201 @@ const ChatbotView = () => {
   const [chips, setChips] = useState(INITIAL_CHIPS)
   const [selectedDestination, setSelectedDestination] = useState(null)
 
-  
-  const pushMessage = (role, content) => {
-    setMessages((prev) => [...prev, { id: Date.now() + Math.random(), role, content }])
+
+  const pushMessage = (role, content, cards = null) => {
+    const messageId = Date.now() + Math.random()
+    setMessages((prev) => [...prev, { id: messageId, role, content, cards }])
   }
-  
-  const handleSend = (text) => {
-    pushMessage('user', <span>{text}</span>)
-    const reply = mockReply(text) // ⭐ 추후 API 연결시 여기서부터 코드 수정
 
-    // 1️⃣ 텍스트 응답
-    setTimeout(() => {
-      pushMessage('assistant', <span>{reply.message}</span>)
+  // 상세 캐시
+  const [detailCache, setDetailCache] = useState({})
 
-      // 2️⃣ 카드형 관광지 추천 추가
-      if (reply.cards && reply.cards.length > 0) {
-        pushMessage(
-          'assistant',
-          <div className="card-list">
-            {reply.cards.map((card) => (
-              <div key={card.id} className="tour-card"
-                onClick={() => setSelectedDestination(card)} // ⭐ 클릭 시 모달 열기
-                >
-                <img src={card.image} alt={card.name} className="tour-image" />
-                <div className="tour-info">
-                  <h4>{card.name}</h4>
-                  <p>{card.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+  const handleCardClick = async (card) => {
+    // 기본 카드 데이터로 먼저 모달 오픈
+    const base = {
+      ...card,
+      tags: [],
+      area: '',
+      rating: '-',
+      long: '',
+      phone: '',
+      closedDays: '',
+      operatingHours: '',
+      operatingSeason: '',
+      parking: false,
+      strollerFriendly: false,
+      petFriendly: false,
+      creditCard: false,
+    }
+
+    if (detailCache[card.contentId || card.id]) {
+      setSelectedDestination(detailCache[card.contentId || card.id])
+      return
+    }
+    setSelectedDestination(base)
+
+    try {
+      const list = await fetchSpotDetail(card.contentId || card.id)
+      if (!Array.isArray(list) || list.length === 0) return
+
+      const first = list[0]
+      const tags = Array.from(new Set(list.map(d => d.info_name).filter(Boolean)))
+      const infoTexts = list.map(d => (d.info_text || '').trim()).filter(Boolean)
+
+      const enriched = {
+        ...base,
+        tags,
+        area: first?.sigungu_name || base.area,
+        long: infoTexts.length ? infoTexts.join('\n\n') : base.long,
+        phone: first?.tel || base.phone,
+        closedDays: first?.restdate || base.closedDays,
+        operatingHours: first?.usetime || base.operatingHours,
+        operatingSeason: first?.useseason || base.operatingSeason,
+        parking: first?.is_parking != null ? toBool(first.is_parking) : base.parking,
+        strollerFriendly: first?.is_baby_carriage != null ? toBool(first.is_baby_carriage) : base.strollerFriendly,
+        petFriendly: first?.is_pet != null ? toBool(first.is_pet) : base.petFriendly,
+        creditCard: first?.is_credit_card != null ? toBool(first.is_credit_card) : base.creditCard,
+      }
+      setDetailCache(prev => ({ ...prev, [card.contentId || card.id]: enriched }))
+      setSelectedDestination(enriched)
+    } catch (e) {
+      console.error('detail fetch error', e)
+    }
+  }
+
+  // 스크롤 기반 카드 컴포넌트
+  const ScrollableCards = ({ cards, messageId }) => {
+    const scrollContainerRef = useRef(null)
+    const [canScrollLeft, setCanScrollLeft] = useState(false)
+    const [canScrollRight, setCanScrollRight] = useState(true)
+
+    const checkScrollButtons = () => {
+      const container = scrollContainerRef.current
+      if (container) {
+        setCanScrollLeft(container.scrollLeft > 0)
+        setCanScrollRight(
+          container.scrollLeft < container.scrollWidth - container.clientWidth
         )
       }
-    }, 300)
+    }
+
+    const scrollLeft = () => {
+      const container = scrollContainerRef.current
+      if (container) {
+        container.scrollBy({
+          left: -300, // 카드 너비만큼 스크롤
+          behavior: 'smooth'
+        })
+      }
+    }
+
+    const scrollRight = () => {
+      const container = scrollContainerRef.current
+      if (container) {
+        container.scrollBy({
+          left: 300, // 카드 너비만큼 스크롤
+          behavior: 'smooth'
+        })
+      }
+    }
+
+    useEffect(() => {
+      const container = scrollContainerRef.current
+      if (container) {
+        checkScrollButtons()
+        container.addEventListener('scroll', checkScrollButtons)
+        return () => container.removeEventListener('scroll', checkScrollButtons)
+      }
+    }, [])
+
+    return (
+      <div className="scrollable-cards-container">
+        {canScrollLeft && (
+          <button className="scroll-btn scroll-btn-left" onClick={scrollLeft}>
+            ‹
+          </button>
+        )}
+        
+        <div 
+          ref={scrollContainerRef}
+          className="card-list-scrollable"
+        >
+          {cards.map((card) => (
+            <div key={card.id} className="tour-card"
+              onClick={() => handleCardClick(card)}
+            >
+              <img src={card.image} alt={card.name} className="tour-image" />
+              <div className="tour-info">
+                <h4>{card.name}</h4>
+                <p>{card.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {canScrollRight && (
+          <button className="scroll-btn scroll-btn-right" onClick={scrollRight}>
+            ›
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  const handleSend = async (text) => {
+    const query = text.trim()
+    if (!query) return
+    pushMessage('user', <span>{query}</span>)
+
+    const cat = detectCategory(query)
+    const askWeather = shouldAskWeather(query)
+
+    // 관광지
+    try {
+      let spots = []
+      try {
+        spots = await fetchTouristSpots(cat?.query)
+      } catch (e) {
+        console.error('tourist_spots 요청 실패:', e.responseText || e)
+        spots = await fetchTouristSpotsFallback()
+      }
+      if (!spots.length && cat?.query) {
+        // 카테고리 검색 결과가 비면 전체 조회 폴백
+        spots = await fetchTouristSpots()
+      }
+      if (spots.length) {
+        const intro = cat ?
+          (cat.label.includes('역사') ? '서울에서 역사와 문화를 느낄 수 있는 공간을 추천해드릴게요.' :
+           cat.label.includes('핫플') ? '요즘 인기 있는 핫플레이스를 중심으로 일정을 제안드릴게요.' :
+           cat.label.includes('자연') ? '도심 속에서 자연을 느낄 수 있는 힐링 스팟을 추천합니다.' :
+           cat.label.includes('쇼핑') ? '쇼핑과 미식이 즐거운 코스로 여행지를 모아봤어요.' : cat.label)
+          : '추천 여행지를 안내드릴게요.'
+        pushMessage('assistant', <span>{intro}</span>)
+        const cards = buildCards(spots, cat?.label)
+        if (cards.length) pushMessage('cards', null, cards)
+      } else {
+        pushMessage('assistant', <span>관련된 관광지를 아직 찾지 못했어요. 다른 키워드로도 물어봐 주세요!</span>)
+      }
+    } catch (e) {
+      console.error('관광지 로드 오류:', e.responseText || e)
+      pushMessage('assistant', <span>관광지 정보를 불러올 수 없어요. 잠시 후 다시 시도해주세요.</span>)
+    }
+
+    // 날씨
+    if (askWeather) {
+      try {
+        const w = await requestJson(`${API_BASE}/api/weather/current/`)
+        const summary = w?.summary || w?.data?.summary || '날씨 정보를 가져오지 못했어요.'
+        pushMessage('assistant', <span>{summary}</span>)
+      } catch (e) {
+        pushMessage('assistant', <span>날씨 정보를 불러오는 중 오류가 발생했어요.</span>)
+      }
+    }
   }
 
   const handleChip = (label) => {
     handleSend(label)
-    setChips((prev) => [label, ...INITIAL_CHIPS.filter((c) => c !== label)].slice(0, 5))
+    setChips([label, ...INITIAL_CHIPS.filter((c) => c !== label)].slice(0, 5))
   }
 
   useEffect(() => {
@@ -147,21 +310,27 @@ const ChatbotView = () => {
       <ChatHeader />
 
       <div className="section">
-        <div style={{ minHeight: '46vh' }}>
+        <div className="chat-messages">
           {messages.map((m) => (
-            <ChatMessage key={m.id} role={m.role}>
-              {m.content}
-            </ChatMessage>
+            m.role === 'cards' ? (
+              <div key={m.id} className="cards-container">
+                <ScrollableCards cards={m.cards} messageId={m.id} />
+              </div>
+            ) : (
+              <ChatMessage key={m.id} role={m.role}>
+                {m.content}
+              </ChatMessage>
+            )
           ))}
         </div>
 
-        <div style={{ margin: '8px 0 16px' }}>
+        <div className="quick-replies-container">
           <QuickReplies options={chips} onSelect={handleChip} />
         </div>
 
         <ChatInput onSend={handleSend} />
 
-        <div className="muted" style={{ fontSize: 15, marginTop: 8 }}>
+        <div className="muted disclaimer">
           AI가 생성한 답변입니다. 실제 정보와 다를 수 있으니 참고용으로만 활용해주세요.
         </div>
         {/* ✅ 모달 추가 */}
