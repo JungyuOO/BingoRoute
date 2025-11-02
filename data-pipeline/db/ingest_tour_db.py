@@ -498,7 +498,6 @@ def ingest_tour_detail(
 
 def main(write_to_disk: bool = False, raw_dir: Path = RAW_DIR) -> None:
     """관광지 관련 전처리와 DB 적재를 한 번에 실행한다."""
-    print("⭐⭐")
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from preprocess import tour as preprocess_tour
     from preprocess import details as preprocess_details
