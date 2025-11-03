@@ -154,6 +154,7 @@ class UserTourPlanManageView(generics.RetrieveUpdateDestroyAPIView):
     """여행 계획 단건 조회/수정/삭제"""
 
     serializer_class = UserTourPlanReadSerializer
+    http_method_names = ["get", "patch", "delete"]
 
     def get_object(self):
         user_id = self.kwargs["user_id"]
@@ -161,7 +162,7 @@ class UserTourPlanManageView(generics.RetrieveUpdateDestroyAPIView):
         return get_object_or_404(MemberTrip, user_id=user_id, trip_id=trip_id)
 
     def get_serializer_class(self):
-        if self.request.method in ("PUT", "PATCH"):
+        if self.request.method == "PATCH":
             return UserTourPlanUpdateSerializer
         return UserTourPlanReadSerializer
 
@@ -196,6 +197,7 @@ class UserTourItineraryManageView(generics.RetrieveUpdateDestroyAPIView):
 
     serializer_class = UserTourItineraryReadSerializer
     queryset = MemberTripItinerary.objects.all()
+    http_method_names = ["get", "patch", "delete"]
 
     def get_object(self):
         trip_id = self.kwargs["trip_id"]
@@ -203,7 +205,7 @@ class UserTourItineraryManageView(generics.RetrieveUpdateDestroyAPIView):
         return get_object_or_404(self.queryset, trip_id=trip_id, seq=seq)
 
     def get_serializer_class(self):
-        if self.request.method in ("PUT", "PATCH"):
+        if self.request.method == "PATCH":
             return UserTourItineraryUpdateSerializer
         return UserTourItineraryReadSerializer
 
@@ -235,4 +237,3 @@ class UserTourItineraryManageView(generics.RetrieveUpdateDestroyAPIView):
     def perform_destroy(self, instance):
         logger.info("UserTourItinerary deleted: trip_id=%s seq=%s", instance.trip_id_id, instance.seq)
         instance.delete()
-
