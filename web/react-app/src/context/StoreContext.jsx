@@ -20,7 +20,7 @@ export const StoreProvider = ({ children }) => {
   // API 기본 URL
   const API_BASE_URL = 'http://localhost:8000/api'
 
-  // 찜하기 토글 함수 (임시로 로컬스토리지 기반으로 작동)
+  // 찜하기 토글 함수
   const toggleWishlist = async (contentId) => {
     console.log('🔄 toggleWishlist 호출됨:', { contentId, session, wishlist })
     
@@ -30,31 +30,13 @@ export const StoreProvider = ({ children }) => {
       return false
     }
 
-    // 임시로 로컬스토리지 기반으로 작동
-    const isCurrentlySaved = wishlist.includes(contentId)
-    console.log('📋 현재 찜 상태:', isCurrentlySaved)
-    
-    if (isCurrentlySaved) {
-      // 찜 해제
-      console.log('🗑️ 찜 해제 (로컬)')
-      setWishlist(prev => prev.filter(id => id !== contentId))
-      return false
-    } else {
-      // 찜 추가
-      console.log('❤️ 찜 추가 (로컬)')
-      setWishlist(prev => [...prev, contentId])
-      return true
-    }
-
-    // TODO: 나중에 API 연동
-    /*
     try {
       const isCurrentlySaved = wishlist.includes(contentId)
       console.log('📋 현재 찜 상태:', isCurrentlySaved)
       
       if (isCurrentlySaved) {
         // 찜 해제
-        console.log('🗑️ 찜 해제 요청 중...')
+        console.log('🗑️ 찜 해제 요청 중...', `${API_BASE_URL}/service/jjim/?user_id=${session.user_id}&content_id=${contentId}`)
         const response = await fetch(`${API_BASE_URL}/service/jjim/?user_id=${session.user_id}&content_id=${contentId}`, {
           method: 'DELETE',
           headers: {
@@ -70,11 +52,14 @@ export const StoreProvider = ({ children }) => {
           return false
         } else {
           const errorData = await response.text()
-          console.error('❌ 찜 해제 실패:', errorData)
+          console.error('❌ 찜 해제 실패:', response.status, errorData)
+          // API 실패 시 로컬에서라도 업데이트
+          setWishlist(prev => prev.filter(id => id !== contentId))
+          return false
         }
       } else {
         // 찜 추가
-        console.log('❤️ 찜 추가 요청 중...')
+        console.log('❤️ 찜 추가 요청 중...', `${API_BASE_URL}/service/jjim/`)
         const response = await fetch(`${API_BASE_URL}/service/jjim/`, {
           method: 'POST',
           headers: {
@@ -94,38 +79,65 @@ export const StoreProvider = ({ children }) => {
           return true
         } else {
           const errorData = await response.text()
-          console.error('❌ 찜 추가 실패:', errorData)
+          console.error('❌ 찜 추가 실패:', response.status, errorData)
+          // API 실패 시 로컬에서라도 업데이트
+          setWishlist(prev => [...prev, contentId])
+          return true
         }
       }
     } catch (error) {
       console.error('❌ 찜하기 API 오류:', error)
+      // 네트워크 오류 시 로컬에서라도 업데이트
+      const isCurrentlySaved = wishlist.includes(contentId)
+      if (isCurrentlySaved) {
+        setWishlist(prev => prev.filter(id => id !== contentId))
+        return false
+      } else {
+        setWishlist(prev => [...prev, contentId])
+        return true
+      }
     }
-    
-    return false
-    */
   }
 
   // 찜 목록 불러오기
   const loadWishlist = async () => {
-    if (!session) return
+    if (!session) {
+      console.log('📋 세션 없음, 찜 목록 로드 건너뜀')
+      return
+    }
+
+    console.log('📋 찜 목록 로드 시작:', session.user_id)
 
     try {
-      const response = await fetch(`${API_BASE_URL}/service/jjim/?user_id=${session.user_id}`)
+      const url = `${API_BASE_URL}/service/jjim/?user_id=${session.user_id}`
+      console.log('📋 찜 목록 요청 URL:', url)
+      
+      const response = await fetch(url)
+      console.log('📋 찜 목록 응답:', response.status, response.ok)
 
       if (response.ok) {
         const data = await response.json()
+        console.log('📋 찜 목록 데이터:', data)
         setWishlist(data.content_id || [])
+        console.log('✅ 찜 목록 로드 완료:', data.content_id || [])
+      } else {
+        const errorData = await response.text()
+        console.error('❌ 찜 목록 로드 실패:', response.status, errorData)
       }
     } catch (error) {
-      console.error('찜 목록 불러오기 오류:', error)
+      console.error('❌ 찜 목록 불러오기 오류:', error)
     }
   }
 
   // 세션이 변경될 때 찜 목록 로드
   useEffect(() => {
     if (session) {
+      console.log('👤 사용자 로그인됨, 찜 목록 로드')
       loadWishlist()
     } else {
+      console.log('👤 사용자 로그아웃됨, 찜 목록 초기화')
+      // 로그아웃 시 찜 목록을 비우지만, 이는 UI 표시용일 뿐
+      // 서버의 실제 데이터는 그대로 유지됨
       setWishlist([])
     }
   }, [session])
@@ -236,7 +248,8 @@ export const StoreProvider = ({ children }) => {
   useEffect(() => {
     setUsers(JSON.parse(localStorage.getItem('br_users') || '[]'))
     setSession(JSON.parse(localStorage.getItem('br_session') || 'null'))
-    setWishlist(JSON.parse(localStorage.getItem('br_wishlist') || '[]'))
+    // 찜 목록은 API에서 불러오므로 로컬스토리지에서 초기화하지 않음
+    // setWishlist(JSON.parse(localStorage.getItem('br_wishlist') || '[]'))
     const storedTrips = JSON.parse(localStorage.getItem('br_trips') || '[]')
     setTrips(storedTrips)
   }, [])
@@ -254,9 +267,10 @@ export const StoreProvider = ({ children }) => {
     }
   }, [session])
 
-  useEffect(() => {
-    localStorage.setItem('br_wishlist', JSON.stringify(wishlist))
-  }, [wishlist])
+  // 찜 목록은 API에서 관리하므로 로컬스토리지에 저장하지 않음
+  // useEffect(() => {
+  //   localStorage.setItem('br_wishlist', JSON.stringify(wishlist))
+  // }, [wishlist])
 
   useEffect(() => {
     localStorage.setItem('br_trips', JSON.stringify(trips))

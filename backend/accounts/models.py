@@ -6,6 +6,9 @@ class CustomUser(AbstractUser):
     # 기본 필드들 (AbstractUser에서 상속)
     # username, email, first_name, last_name, password 등
     
+
+    id = models.BigAutoField(max_length=50, primary_key=True, editable=False)
+
     # 추가 필드들
     user_id = models.CharField(max_length=50, unique=True, help_text="로그인용 ID")
     email = models.EmailField(unique=True, help_text="이메일 주소")
