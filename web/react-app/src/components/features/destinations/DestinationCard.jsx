@@ -1,18 +1,26 @@
-﻿import { useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+﻿import { useState, useCallback, useEffect } from 'react'
 import { useStore } from '../../../context/StoreContext'
-import { useAuth } from "../../../hooks/api/useAuth"
+import { useAuth } from '../../../hooks/api/useAuth'
+import { addJjim, removeJjim } from '../../../services/jjimService'
+import { fetchTouristSpotDetail } from '../../../services/touristService'
 import DestinationDetailModal from './DestinationDetailModal'
 
 const DestinationCard = ({ destination }) => {
   const { wishlist, setWishlist } = useStore()
-  const { isAuthenticated, promptLogin } = useAuth()
-  const navigate = useNavigate()
+  const { isAuthenticated, promptLogin, user } = useAuth()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [detail, setDetail] = useState(null)
+  const [detailLoading, setDetailLoading] = useState(false)
+  const [detailError, setDetailError] = useState(null)
+  const [detailRequested, setDetailRequested] = useState(false)
 
   const isSaved = wishlist.includes(destination.id)
+  const imageStyle = destination.image
+    ? { backgroundImage: `url(${destination.image})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : undefined
 
-  const toggleSave = useCallback((event) => {
+  const toggleSave = useCallback(async (event) => {
     if (event) {
       event.stopPropagation()
     }
@@ -22,13 +30,66 @@ const DestinationCard = ({ destination }) => {
       return
     }
 
-    setWishlist(prev => {
-      const exists = prev.includes(destination.id)
-      return exists
-        ? prev.filter(id => id !== destination.id)
-        : [...prev, destination.id]
-    })
-  }, [destination.id, isAuthenticated, promptLogin, setWishlist])
+    if (!user?.user_id || isProcessing) {
+      return
+    }
+
+    setIsProcessing(true)
+    try {
+      if (isSaved) {
+        await removeJjim(user.user_id, destination.id)
+        setWishlist(prev => prev.filter(id => id !== destination.id))
+      } else {
+        await addJjim(user.user_id, destination.id)
+        setWishlist(prev => {
+          if (prev.includes(destination.id)) {
+            return prev
+          }
+          return [...prev, destination.id]
+        })
+      }
+    } catch (error) {
+      console.error('찜 상태 변경 실패:', error)
+      alert(error.message || '찜 상태 변경에 실패했습니다.')
+    } finally {
+      setIsProcessing(false)
+    }
+  }, [destination.id, isAuthenticated, isSaved, promptLogin, setWishlist, user?.user_id, isProcessing])
+
+  const requestDetail = useCallback(async () => {
+    setDetailRequested(true)
+    setDetailLoading(true)
+    setDetailError(null)
+    try {
+      const detailData = await fetchTouristSpotDetail(destination.id)
+      setDetail(detailData)
+    } catch (error) {
+      console.error('관광지 상세 정보를 불러오지 못했습니다:', error)
+      setDetailError(error.message || '상세 정보를 불러오는 중 문제가 발생했습니다.')
+    } finally {
+      setDetailLoading(false)
+    }
+  }, [destination.id])
+
+  useEffect(() => {
+    setDetail(null)
+    setDetailError(null)
+    setDetailRequested(false)
+    setDetailLoading(false)
+  }, [destination.id])
+
+  useEffect(() => {
+    if (!isModalOpen || detail || detailLoading || detailRequested) {
+      return
+    }
+    requestDetail()
+  }, [detail, detailLoading, detailRequested, isModalOpen, requestDetail])
+
+  const handleRetryDetail = useCallback(() => {
+    setDetail(null)
+    setDetailError(null)
+    setDetailRequested(false)
+  }, [])
 
   const handleNavigate = useCallback(() => {
     // PlaceView는 더 이상 사용하지 않으므로 이 함수는 빈 함수로 유지
@@ -59,7 +120,7 @@ const DestinationCard = ({ destination }) => {
         onClick={openModal}
         onKeyDown={handleKeyDown}
       >
-        <div className="img" aria-hidden />
+        <div className="img" aria-hidden style={imageStyle} />
         <div className="body">
           <div className="row">
             <strong>{destination.name}</strong>
@@ -68,6 +129,7 @@ const DestinationCard = ({ destination }) => {
               type="button"
               className={`wishlist-toggle ${isSaved ? 'is-saved' : ''}`}
               onClick={toggleSave}
+              disabled={isProcessing}
               aria-pressed={isSaved}
               aria-label={isSaved ? '찜 해제' : '찜하기'}
               title={isSaved ? '찜 해제' : '찜하기'}
@@ -91,6 +153,10 @@ const DestinationCard = ({ destination }) => {
         onNavigate={handleNavigate}
         isSaved={isSaved}
         onToggleSave={toggleSave}
+        detail={detail}
+        detailLoading={detailLoading}
+        detailError={detailError}
+        onRetryDetail={handleRetryDetail}
       />
     </>
   )

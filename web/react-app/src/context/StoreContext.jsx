@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { fetchJjimList } from '../services/jjimService'
 
 const StoreContext = createContext()
 
@@ -16,6 +17,7 @@ export const StoreProvider = ({ children }) => {
   const [wishlist, setWishlist] = useState([])
   const [trips, setTrips] = useState([])
   const [loginRequired, setLoginRequired] = useState(false)
+  const [storageHydrated, setStorageHydrated] = useState(false)
   // 여행 계획에 여행지 추가하는 함수 (중복 제거 + 통합버전)
   const addDestinationToTrip = (tripTitle, destinationName) => {
     setTrips((prevTrips) => {
@@ -122,32 +124,63 @@ export const StoreProvider = ({ children }) => {
   // --- LocalStorage 동기화 ---
   useEffect(() => {
     setUsers(JSON.parse(localStorage.getItem('br_users') || '[]'))
-    setSession(JSON.parse(localStorage.getItem('br_session') || 'null'))
+    const storedSession = JSON.parse(localStorage.getItem('br_session') || 'null')
+    setSession(storedSession)
     setWishlist(JSON.parse(localStorage.getItem('br_wishlist') || '[]'))
     const storedTrips = JSON.parse(localStorage.getItem('br_trips') || '[]')
     setTrips(storedTrips)
+    setStorageHydrated(true)
   }, [])
 
   // 로컬스토리지에 자동 저장
   useEffect(() => {
+    if (!storageHydrated) return
     localStorage.setItem('br_users', JSON.stringify(users))
-  }, [users])
+  }, [users, storageHydrated])
 
   useEffect(() => {
+    if (!storageHydrated) return
     if (session === null) {
       localStorage.removeItem('br_session')
     } else {
       localStorage.setItem('br_session', JSON.stringify(session))
     }
-  }, [session])
+  }, [session, storageHydrated])
 
   useEffect(() => {
+    if (!storageHydrated) return
     localStorage.setItem('br_wishlist', JSON.stringify(wishlist))
-  }, [wishlist])
+  }, [wishlist, storageHydrated])
 
   useEffect(() => {
+    if (!storageHydrated) return
     localStorage.setItem('br_trips', JSON.stringify(trips))
-  }, [trips])
+  }, [trips, storageHydrated])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const syncWishlist = async () => {
+      if (!session?.user_id) {
+        setWishlist([])
+        return
+      }
+      try {
+        const remoteWishlist = await fetchJjimList(session.user_id)
+        if (!cancelled) {
+          setWishlist(remoteWishlist)
+        }
+      } catch (error) {
+        console.error('찜 목록을 불러오지 못했습니다:', error)
+      }
+    }
+
+    syncWishlist()
+
+    return () => {
+      cancelled = true
+    }
+  }, [session?.user_id])
 
   // value 객체에 함수 포함
   const value = {
