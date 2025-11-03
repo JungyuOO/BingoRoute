@@ -11,6 +11,19 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
+            name='Jjim',
+            fields=[
+                ('jjim_id', models.BigAutoField(primary_key=True, serialize=False)),
+                ('user_id', models.CharField(max_length=50)),
+            ],
+            options={
+                'verbose_name': '찜',
+                'verbose_name_plural': '찜 목록',
+                'db_table': 'jjim',
+                'managed': False,
+            },
+        ),
+        migrations.CreateModel(
             name='MemberTrip',
             fields=[
                 ('trip_id', models.AutoField(primary_key=True, serialize=False)),
