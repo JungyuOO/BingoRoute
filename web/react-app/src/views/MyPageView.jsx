@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import './MyPageView.css'
 import '../components/features/destinations/Destinations.css'
 import DestinationCard from '../components/features/destinations/DestinationCard'
 import TripDetailModal from '../components/features/trips/TripDetailModal'
 import { useStore } from '../context/StoreContext'
-import { DESTINATIONS } from '../data/destinations'
+import { fetchTouristSpots } from '../services/touristService'
 
 const MyPageView = () => {
   const { session, setSession, wishlist, trips, removeDestinationFromTrip, deleteTrip, mergeTrips, updateTrip, replanTrip } = useStore()
@@ -18,6 +18,65 @@ const MyPageView = () => {
     name: session?.name || session?.first_name || '',
     email: session?.email || ''
   })
+  const [allDestinations, setAllDestinations] = useState([])
+  const [destinationsLoading, setDestinationsLoading] = useState(false)
+  const [destinationsError, setDestinationsError] = useState(null)
+
+  const neededDestinationIds = useMemo(() => {
+    const ids = new Set()
+    ;(wishlist || []).forEach(id => ids.add(String(id)))
+    ;(trips || []).forEach(trip => {
+      (trip.destinations || trip.routes || []).forEach(id => ids.add(String(id)))
+    })
+    return Array.from(ids)
+  }, [wishlist, trips])
+
+  useEffect(() => {
+    let cancelled = false
+
+    if (!session?.user_id || neededDestinationIds.length === 0) {
+      setAllDestinations([])
+      setDestinationsLoading(false)
+      setDestinationsError(null)
+      return
+    }
+
+    const loadDestinations = async () => {
+      setDestinationsLoading(true)
+      setDestinationsError(null)
+      try {
+        const results = await Promise.all(
+          neededDestinationIds.map(async (id) => {
+            try {
+              const { items } = await fetchTouristSpots({ content_id: id })
+              return items?.[0] || null
+            } catch (error) {
+              console.error(`관광지(${id}) 정보를 불러오지 못했습니다:`, error)
+              return null
+            }
+          })
+        )
+        if (!cancelled) {
+          setAllDestinations(results.filter(Boolean))
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error('관광지 목록을 불러오지 못했습니다:', error)
+          setDestinationsError(error.message || '관광지 정보를 불러오는 중 오류가 발생했습니다.')
+        }
+      } finally {
+        if (!cancelled) {
+          setDestinationsLoading(false)
+        }
+      }
+    }
+
+    loadDestinations()
+
+    return () => {
+      cancelled = true
+    }
+  }, [neededDestinationIds, session?.user_id])
 
   const handleEditStart = () => {
     setEditForm({
@@ -65,7 +124,52 @@ const MyPageView = () => {
     )
   }
 
-  const wishlistDestinations = DESTINATIONS.filter(d => wishlist.includes(d.id))
+  const destinationMap = useMemo(() => {
+    const map = new Map()
+    allDestinations.forEach((d) => {
+      if (!d) return
+      map.set(String(d.id), d)
+      if (d.name) {
+        map.set(d.name, d)
+      }
+    })
+    return map
+  }, [allDestinations])
+
+  const createPlaceholderDestination = useCallback((id) => ({
+    id: String(id),
+    name: `관광지 ${id}`,
+    area: '정보 없음',
+    rating: '정보 없음',
+    tags: [],
+    short: '상세 정보가 준비되지 않았습니다.',
+  }), [])
+
+  const resolveDestination = useCallback(
+    (id) => {
+      if (id === undefined || id === null) return null
+      const match = destinationMap.get(String(id)) || destinationMap.get(id)
+      return match || createPlaceholderDestination(id)
+    },
+    [createPlaceholderDestination, destinationMap]
+  )
+
+  const wishlistDestinations = useMemo(() => {
+    if (!Array.isArray(wishlist) || wishlist.length === 0) {
+      return []
+    }
+    const uniqueIds = new Set()
+    return wishlist.map((rawId) => {
+      const key = String(rawId)
+      const destination = resolveDestination(key)
+      if (!destination) return null
+      if (uniqueIds.has(destination.id)) {
+        return null
+      }
+      uniqueIds.add(destination.id)
+      return destination
+    }).filter(Boolean)
+  }, [wishlist, resolveDestination])
 
   const getWeatherScoreClass = (score) => {
     if (score >= 80) return 'excellent'
@@ -125,8 +229,8 @@ const MyPageView = () => {
   // 여행계획 공유하기 -> 해당 여행계획의 url이 복사됨.
   const shareTrip = async (trip) => {
     const names = (trip.destinations || trip.routes || []).map(d => {
-      const m = DESTINATIONS.find(x => x.id === d || x.name === d)
-      return m?.name || d
+      const match = resolveDestination(d)
+      return match?.name || d
     })
     const text = `여행 계획: ${trip.title}\n기간: ${formatDateRange(trip)}\n경로: ${names.join(' > ')}`
     const url = `${window.location.origin}/mypage?trip=${encodeURIComponent(trip.id)}`
@@ -230,7 +334,15 @@ const MyPageView = () => {
 
       <div className="section">
         <h3>찜한 장소 ({wishlist.length})</h3>
-        {wishlistDestinations.length > 0 ? (
+        {destinationsLoading ? (
+          <div className="center">
+            <p className="muted">찜한 장소를 불러오는 중입니다...</p>
+          </div>
+        ) : destinationsError ? (
+          <div className="center">
+            <p className="muted" style={{ color: 'red' }}>{destinationsError}</p>
+          </div>
+        ) : wishlistDestinations.length > 0 ? (
           <div className="cards">
             {wishlistDestinations.map(destination => (
               <DestinationCard key={destination.id} destination={destination} />
@@ -321,7 +433,7 @@ const MyPageView = () => {
                     <div className="trip-destinations">
                       {(trip.destinations || trip.routes || []).length > 0 ? (
                         (trip.destinations || trip.routes).map((d, i) => {
-                          const dest = DESTINATIONS.find(x => x.id === d || x.name === d)
+                          const dest = resolveDestination(d)
                           return (
                             <span key={`${d}-${i}`} className="destination-tag destination-tag-editable">
                               {dest?.name || d}
@@ -418,7 +530,12 @@ const MyPageView = () => {
         )}
       </div>
 
-      <TripDetailModal trip={selectedTrip} isOpen={isTripModalOpen} onClose={closeTripModal} />
+      <TripDetailModal
+        trip={selectedTrip}
+        isOpen={isTripModalOpen}
+        onClose={closeTripModal}
+        resolveDestination={resolveDestination}
+      />
     </div>
   )
 }
