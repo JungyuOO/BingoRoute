@@ -13,16 +13,22 @@ const HomePage = () => {
   const { weatherData, loading } = useWeather()
   const navigate = useNavigate()
 
+<<<<<<< HEAD
   // ⭐ 실제 관광지 데이터를 저장할 상태
   const [destinations, setDestinations] = useState([])
   const [loading_destinations, setLoadingDestinations] = useState(true)
+=======
+  // ⭐ 여행지 데이터를 저장할 상태, React가 여행 데이터 기억 및 관리할 공간
+  const [destinations, setDestinations] = useState([]) // 🍑 여행지API 활성화로 수정 완료
+>>>>>>> 33ac08ff2e5c8fde704d9a41dec02808690df531
 
-  const [filter, setFilter] = useState('')
   // 추천 여행지 필터링: 지역/테마
+  const [filter, setFilter] = useState('')
   const [selectedArea, setSelectedArea] = useState('ALL')
   const [selectedTheme, setSelectedTheme] = useState('ALL')
   const [selectedDistrict, setSelectedDistrict] = useState('강남구')
 
+<<<<<<< HEAD
   // ⭐ 실제 관광지 API 연동
   useEffect(() => {
     const fetchDestinations = async () => {
@@ -71,11 +77,37 @@ const HomePage = () => {
 
     fetchDestinations()
   }, [])
+=======
+  // 🍑 Django API 연동으로 수정
+  // useEffect(() => {
+  //   const fetchDestinations = async () => {
+  //     try {
+  //       const response = await fetch('http://localhost:8000/api/destinations/')
+  //       const data = await response.json()
+
+  //       if (response.ok && data.success) {
+  //         setDestinations(data.data)
+  //       } else {
+  //         console.error('❌ 여행지 데이터 불러오기 실패:', data.error)
+  //       }
+  //     } catch (error) {
+  //       console.error('⚠️ Django API 요청 오류:', error)
+  //     }
+  //   }
+
+  //   fetchDestinations()
+  // }, [])
+>>>>>>> 33ac08ff2e5c8fde704d9a41dec02808690df531
 
 
   // 유니크 지역/테마 목록 생성
   const areas = Array.from(new Set(destinations.map(d => d.area)))
+<<<<<<< HEAD
   const themes = Array.from(new Set(destinations.flatMap(d => d.tags)))
+=======
+  const themes = Array.from(new Set(destinations.flatMap(d => d.tags || [])))
+
+>>>>>>> 33ac08ff2e5c8fde704d9a41dec02808690df531
 
   // 첫 번째 구를 기본 선택
   useEffect(() => {

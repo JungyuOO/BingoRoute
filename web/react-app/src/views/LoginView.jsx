@@ -16,7 +16,7 @@ const LoginView = () => {
     setError('')
 
     try {
-      const { user, access } = await loginRequest({ user_id, password })
+      const { user, access } = await loginRequest({ user_id, password })  // const = await (const=def, await=return)
       setSession({ ...user, access })
       navigate(ROUTES.HOME)
     } catch (err) {
