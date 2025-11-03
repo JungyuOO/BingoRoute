@@ -16,7 +16,7 @@ export const StoreProvider = ({ children }) => {
   const [wishlist, setWishlist] = useState([])
   const [trips, setTrips] = useState([])
   const [loginRequired, setLoginRequired] = useState(false)
-  // ✅ 여행 계획에 여행지 추가하는 함수 (중복 제거 + 통합버전)
+  // 여행 계획에 여행지 추가하는 함수 (중복 제거 + 통합버전)
   const addDestinationToTrip = (tripTitle, destinationName) => {
     setTrips((prevTrips) => {
       const existingTrip = prevTrips.find((t) => t.title === tripTitle)
@@ -46,8 +46,78 @@ export const StoreProvider = ({ children }) => {
     })
   }
 
-  // ✅ 전체 여행 계획 삭제
+  // 전체 여행 계획 삭제
   const clearTrips = () => setTrips([])
+
+  // 여행 계획 업데이트 (날짜 등)
+  const updateTrip = (tripId, updates) => {
+    setTrips((prevTrips) =>
+      prevTrips.map((trip) =>
+        trip.id === tripId ? { ...trip, ...updates } : trip
+      )
+    )
+  }
+
+  // 여행 계획에서 여행지 제거
+  const removeDestinationFromTrip = (tripId, destinationName) => {
+    setTrips((prevTrips) =>
+      prevTrips.map((trip) =>
+        trip.id === tripId
+          ? {
+            ...trip,
+            destinations: trip.destinations.filter((d) => d !== destinationName),
+          }
+          : trip
+      )
+    )
+  }
+
+  // 여행 계획 삭제
+  const deleteTrip = (tripId) => {
+    setTrips((prevTrips) => prevTrips.filter((trip) => trip.id !== tripId))
+  }
+
+  // 여행 계획 병합
+  const mergeTrips = (targetTripId, sourceTripIds) => {
+    setTrips((prevTrips) => {
+      const targetTrip = prevTrips.find((trip) => trip.id === targetTripId)
+      const sourceTrips = prevTrips.filter((trip) => sourceTripIds.includes(trip.id))
+
+      if (!targetTrip || sourceTrips.length === 0) return prevTrips
+
+      // 모든 여행지를 병합 (중복 제거)
+      const allDestinations = [
+        ...(targetTrip.destinations || []),
+        ...sourceTrips.flatMap((trip) => trip.destinations || []),
+      ]
+      const uniqueDestinations = [...new Set(allDestinations)]
+
+      // 대상 여행 계획 업데이트 및 소스 여행 계획들 제거
+      return prevTrips
+        .filter((trip) => !sourceTripIds.includes(trip.id))
+        .map((trip) =>
+          trip.id === targetTripId
+            ? { ...trip, destinations: uniqueDestinations }
+            : trip
+        )
+    })
+  }
+
+  // 완료된 여행 계획을 다시 계획하기 (날짜 초기화)
+  const replanTrip = (tripId) => {
+    setTrips((prevTrips) =>
+      prevTrips.map((trip) =>
+        trip.id === tripId
+          ? {
+            ...trip,
+            startDate: null,
+            endDate: null,
+            title: `${trip.title} (재계획)`,
+          }
+          : trip
+      )
+    )
+  }
 
   // --- LocalStorage 동기화 ---
   useEffect(() => {
@@ -58,7 +128,7 @@ export const StoreProvider = ({ children }) => {
     setTrips(storedTrips)
   }, [])
 
-  // ✅ 로컬스토리지에 자동 저장
+  // 로컬스토리지에 자동 저장
   useEffect(() => {
     localStorage.setItem('br_users', JSON.stringify(users))
   }, [users])
@@ -79,7 +149,7 @@ export const StoreProvider = ({ children }) => {
     localStorage.setItem('br_trips', JSON.stringify(trips))
   }, [trips])
 
-  // ✅ value 객체에 함수 포함
+  // value 객체에 함수 포함
   const value = {
     users,
     setUsers,
@@ -91,6 +161,11 @@ export const StoreProvider = ({ children }) => {
     setTrips,
     addDestinationToTrip, // 👈 여행지 추가 함수
     clearTrips, // 👈 전체 삭제 함수
+    updateTrip, // 👈 여행 계획 업데이트 함수
+    removeDestinationFromTrip, // 👈 여행지 제거 함수
+    deleteTrip, // 👈 여행 계획 삭제 함수
+    mergeTrips, // 👈 여행 계획 병합 함수
+    replanTrip, // 👈 여행 다시 계획하기 함수
     loginRequired,
     setLoginRequired,
   }

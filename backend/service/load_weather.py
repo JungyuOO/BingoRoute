@@ -45,7 +45,7 @@ def collect_weather_data(request):
         result = WeatherService.collect_and_save_to_csv()
         return JsonResponse({
             'success': True,
-            'message': f'날씨 데이터 CSV 저장 완료! 단기:{result["short_count"]}건, 중기:{result["mid_count"]}건',
+            'message': f'날씨 데이터 수집 완료! 단기:{result["short_count"]}건, 중기:{result["mid_count"]}건',
             'data': result
         })
     except Exception as e:
@@ -59,7 +59,8 @@ def collect_weather_data(request):
 def get_mid_forecast_for_algorithm(request):
     """추천 알고리즘용 중기예보 데이터 조회 (CSV 기반)"""
     try:
-        forecast_data = WeatherService.get_mid_forecast_for_algorithm()
+        region = request.GET.get('region')
+        forecast_data = WeatherService.get_mid_forecast_for_algorithm(region=region)
         return JsonResponse({
             'success': True,
             'data': forecast_data

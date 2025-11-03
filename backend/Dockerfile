@@ -19,8 +19,8 @@ COPY backend /app
 COPY data-pipeline /app/data-pipeline
 
 # Fix Windows line endings + ensure execute permission
-RUN dos2unix docker/entrypoint.sh && chmod +x docker/entrypoint.sh
+RUN dos2unix service/docker/entrypoint.sh && chmod +x service/docker/entrypoint.sh
 
 EXPOSE 8000
 
-ENTRYPOINT ["/app/docker/entrypoint.sh"]
+ENTRYPOINT ["/app/service/docker/entrypoint.sh"]

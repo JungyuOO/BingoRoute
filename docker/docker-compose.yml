@@ -45,7 +45,7 @@ services:
       postgres:
         condition: service_healthy
     # Ensure entrypoint runs even if bind-mounted file loses +x
-    entrypoint: ["sh", "/app/docker/entrypoint.sh"]
+    entrypoint: ["sh", "/app/service/docker/entrypoint.sh"]
 
 volumes:
   postgres_data:
