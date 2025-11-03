@@ -71,10 +71,32 @@ def ensure_tour_tables() -> None:
     return
 
 
+def _read_sql_dataframe(conn, query: str) -> pd.DataFrame:
+    with conn.cursor() as cur:
+        cur.execute(query)
+        rows = cur.fetchall()
+        description = cur.description or []
+    columns = [desc.name if hasattr(desc, "name") else desc[0] for desc in description]
+    if not rows:
+        return pd.DataFrame(columns=columns)
+    return pd.DataFrame(rows, columns=columns)
+
+
+def _values_equal(lhs, rhs) -> bool:
+    if pd.isna(lhs) and pd.isna(rhs):
+        return True
+    if pd.isna(lhs) or pd.isna(rhs):
+        return False
+    try:
+        return lhs == rhs
+    except Exception:
+        return False
+
+
 def _load_code_table() -> pd.DataFrame:
     with pg_connect() as conn:
         try:
-            return pd.read_sql("SELECT code, name, upper_code FROM code_table", conn)
+            return _read_sql_dataframe(conn, "SELECT code, name, upper_code FROM code_table")
         except Exception:
             return pd.DataFrame(columns=["code", "name", "upper_code"])
 
@@ -133,9 +155,9 @@ def ingest_tour_spot(
     work = _ensure_datetime(work, ["created_at", "updated_at"])
 
     with pg_connect() as conn:
-        existing = pd.read_sql(
-            "SELECT content_id, title, firstimage, firstimage2, category_code, category_name, created_at, updated_at FROM tourist_spot",
+        existing = _read_sql_dataframe(
             conn,
+            "SELECT content_id, title, firstimage, firstimage2, category_code, category_name, created_at, updated_at FROM tourist_spot",
         )
 
         work = work.drop_duplicates(subset=["content_id"]).set_index("content_id")
@@ -339,14 +361,14 @@ def ingest_tour_detail(
     ensure_tour_tables()
 
     with pg_connect() as conn:
-        existing = pd.read_sql(
+        existing = _read_sql_dataframe(
+            conn,
             """
             SELECT content_id, intro_serial_num, info_serial_num, address_code, sigungu_name, zip_code, address,
                    map_x, map_y, created_at, updated_at, content_type_id, tel, restdate, useseason, usetime,
                    is_parking, is_baby_carriage, is_pet, is_credit_card, info_name, info_text
               FROM tourist_spot_detail
             """,
-            conn,
         )
 
         key_cols = ["content_id", "intro_serial_num", "info_serial_num"]
@@ -380,7 +402,14 @@ def ingest_tour_detail(
         for col in compare_cols:
             left = bundle.loc[overlap_idx, col]
             right = existing.loc[overlap_idx, col]
-            changed_mask |= ~(left.eq(right) | (left.isna() & right.isna()))
+            left_values = left.to_numpy(dtype=object)
+            right_values = right.to_numpy(dtype=object)
+            equal = pd.Series(
+                [_values_equal(lv, rv) for lv, rv in zip(left_values, right_values)],
+                index=overlap_idx,
+                dtype=bool,
+            )
+            changed_mask = changed_mask | ~equal
 
         changed_idx = changed_mask[changed_mask].index
         changed_rows = bundle.loc[changed_idx].reset_index()

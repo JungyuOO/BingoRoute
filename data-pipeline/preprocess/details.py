@@ -342,6 +342,13 @@ def prep_intro(df: pd.DataFrame) -> pd.DataFrame:
     out["infocenter_tel"] = out["infocenter"].apply(split_multiple_infocenter)
     out = out.explode("infocenter_tel", ignore_index=True)
 
+    if "infocenter" in out.columns:
+        out["infocenter"] = out["infocenter"].astype("object")
+    if "tel" in out.columns:
+        out["tel"] = out["tel"].astype("object")
+    else:
+        out["tel"] = pd.Series(index=out.index, dtype="object")
+
     if out["infocenter_tel"].notna().any():
         unpack = out.loc[out["infocenter_tel"].notna(), "infocenter_tel"].apply(pd.Series)
         unpack.columns = ["infocenter", "tel"]
