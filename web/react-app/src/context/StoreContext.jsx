@@ -16,6 +16,119 @@ export const StoreProvider = ({ children }) => {
   const [wishlist, setWishlist] = useState([])
   const [trips, setTrips] = useState([])
   const [loginRequired, setLoginRequired] = useState(false)
+
+  // API 기본 URL
+  const API_BASE_URL = 'http://localhost:8000/api'
+
+  // 찜하기 토글 함수 (임시로 로컬스토리지 기반으로 작동)
+  const toggleWishlist = async (contentId) => {
+    console.log('🔄 toggleWishlist 호출됨:', { contentId, session, wishlist })
+    
+    if (!session) {
+      console.log('❌ 세션 없음, 로그인 필요')
+      setLoginRequired(true)
+      return false
+    }
+
+    // 임시로 로컬스토리지 기반으로 작동
+    const isCurrentlySaved = wishlist.includes(contentId)
+    console.log('📋 현재 찜 상태:', isCurrentlySaved)
+    
+    if (isCurrentlySaved) {
+      // 찜 해제
+      console.log('🗑️ 찜 해제 (로컬)')
+      setWishlist(prev => prev.filter(id => id !== contentId))
+      return false
+    } else {
+      // 찜 추가
+      console.log('❤️ 찜 추가 (로컬)')
+      setWishlist(prev => [...prev, contentId])
+      return true
+    }
+
+    // TODO: 나중에 API 연동
+    /*
+    try {
+      const isCurrentlySaved = wishlist.includes(contentId)
+      console.log('📋 현재 찜 상태:', isCurrentlySaved)
+      
+      if (isCurrentlySaved) {
+        // 찜 해제
+        console.log('🗑️ 찜 해제 요청 중...')
+        const response = await fetch(`${API_BASE_URL}/service/jjim/?user_id=${session.user_id}&content_id=${contentId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
+
+        console.log('🗑️ 찜 해제 응답:', response.status, response.ok)
+        
+        if (response.ok) {
+          setWishlist(prev => prev.filter(id => id !== contentId))
+          console.log('✅ 찜 해제 완료')
+          return false
+        } else {
+          const errorData = await response.text()
+          console.error('❌ 찜 해제 실패:', errorData)
+        }
+      } else {
+        // 찜 추가
+        console.log('❤️ 찜 추가 요청 중...')
+        const response = await fetch(`${API_BASE_URL}/service/jjim/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: session.user_id,
+            content_id: contentId
+          })
+        })
+
+        console.log('❤️ 찜 추가 응답:', response.status, response.ok)
+        
+        if (response.ok) {
+          setWishlist(prev => [...prev, contentId])
+          console.log('✅ 찜 추가 완료')
+          return true
+        } else {
+          const errorData = await response.text()
+          console.error('❌ 찜 추가 실패:', errorData)
+        }
+      }
+    } catch (error) {
+      console.error('❌ 찜하기 API 오류:', error)
+    }
+    
+    return false
+    */
+  }
+
+  // 찜 목록 불러오기
+  const loadWishlist = async () => {
+    if (!session) return
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/service/jjim/?user_id=${session.user_id}`)
+
+      if (response.ok) {
+        const data = await response.json()
+        setWishlist(data.content_id || [])
+      }
+    } catch (error) {
+      console.error('찜 목록 불러오기 오류:', error)
+    }
+  }
+
+  // 세션이 변경될 때 찜 목록 로드
+  useEffect(() => {
+    if (session) {
+      loadWishlist()
+    } else {
+      setWishlist([])
+    }
+  }, [session])
   // 여행 계획에 여행지 추가하는 함수 (중복 제거 + 통합버전)
   const addDestinationToTrip = (tripTitle, destinationName) => {
     setTrips((prevTrips) => {
@@ -168,6 +281,8 @@ export const StoreProvider = ({ children }) => {
     replanTrip, // 👈 여행 다시 계획하기 함수
     loginRequired,
     setLoginRequired,
+    toggleWishlist, // 👈 찜하기 토글 함수
+    loadWishlist, // 👈 찜 목록 불러오기 함수
   }
 
   return (

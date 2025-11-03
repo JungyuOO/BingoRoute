@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model, authenticate
 from django.db import IntegrityError
 from rest_framework import serializers
-from rest_framework_simplejwt.tokens import AccessToken
 from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
 
 User = get_user_model()  # CustomUser 모델 사용
@@ -149,5 +148,4 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("사용자 ID 또는 비밀번호가 올바르지 않습니다.")
 
         attrs["user"] = user
-        attrs["access"] = str(AccessToken.for_user(user))
         return attrs

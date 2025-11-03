@@ -75,10 +75,8 @@ def login_view(request):
     serializer = LoginSerializer(data=request.data)
     if not serializer.is_valid():
         return Response({"detail": serializer.errors.get("non_field_errors", serializer.errors)}, status=status.HTTP_400_BAD_REQUEST)
-    access = serializer.validated_data["access"]
     user = serializer.validated_data["user"]
     return Response({
-        "access": access,
         "user": UserSerializer(user).data,
     })
 

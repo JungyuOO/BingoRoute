@@ -199,6 +199,7 @@ SPECTACULAR_SETTINGS = {
         {'name': '회원관리', 'description': '사용자 회원가입, 로그인, 프로필 관리'},
         {'name': '관광지', 'description': '관광지 정보 조회 및 관리'},
         {'name': '찜하기', 'description': '관광지 찜하기 기능'},
+        {'name': '찜하기', 'description': '관광지 찜하기 기능'},
         {'name': '여행계획', 'description': '여행 계획 생성 및 관리'},
     ],
 }

@@ -5,30 +5,31 @@ import { useAuth } from "../../../hooks/api/useAuth"
 import DestinationDetailModal from './DestinationDetailModal'
 
 const DestinationCard = ({ destination }) => {
-  const { wishlist, setWishlist } = useStore()
+  const { wishlist, toggleWishlist } = useStore()
   const { isAuthenticated, promptLogin } = useAuth()
   const navigate = useNavigate()
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const isSaved = wishlist.includes(destination.id)
 
-  const toggleSave = useCallback((event) => {
+  const toggleSave = useCallback(async (event) => {
+    console.log('🖱️ 찜하기 버튼 클릭됨:', destination.name, destination.id)
+    
     if (event) {
       event.stopPropagation()
     }
 
     if (!isAuthenticated) {
+      console.log('❌ 인증되지 않음, 로그인 프롬프트 표시')
       promptLogin()
       return
     }
 
-    setWishlist(prev => {
-      const exists = prev.includes(destination.id)
-      return exists
-        ? prev.filter(id => id !== destination.id)
-        : [...prev, destination.id]
-    })
-  }, [destination.id, isAuthenticated, promptLogin, setWishlist])
+    console.log('🔄 toggleWishlist 호출 시작')
+    // API를 통해 찜하기 토글
+    const result = await toggleWishlist(destination.id)
+    console.log('✅ toggleWishlist 완료:', result)
+  }, [destination.id, destination.name, isAuthenticated, promptLogin, toggleWishlist])
 
   const handleNavigate = useCallback(() => {
     // PlaceView는 더 이상 사용하지 않으므로 이 함수는 빈 함수로 유지
