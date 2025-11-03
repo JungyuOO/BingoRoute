@@ -253,35 +253,36 @@ const ChatbotView = () => {
     const cat = detectCategory(query)
     const askWeather = shouldAskWeather(query)
 
-    // 관광지
-    try {
-      let spots = []
+    // 관광지: 카테고리 키워드가 있을 때만 조회
+    if (cat) {
       try {
-        spots = await fetchTouristSpots(cat?.query)
+        let spots = []
+        try {
+          spots = await fetchTouristSpots(cat?.query)
+        } catch (e) {
+          console.error('tourist_spots 요청 실패:', e.responseText || e)
+          spots = await fetchTouristSpotsFallback()
+        }
+        if (!spots.length && cat?.query) {
+          // 카테고리 검색 결과가 비면 전체 조회 폴백
+          spots = await fetchTouristSpots()
+        }
+        if (spots.length) {
+          const intro =
+            cat.label.includes('역사') ? '서울에서 역사와 문화를 느낄 수 있는 공간을 추천해드릴게요.' :
+            cat.label.includes('핫플') ? '요즘 인기 있는 핫플레이스를 중심으로 일정을 제안드릴게요.' :
+            cat.label.includes('자연') ? '도심 속에서 자연을 느낄 수 있는 힐링 스팟을 추천합니다.' :
+            cat.label.includes('쇼핑') ? '쇼핑과 미식이 즐거운 코스로 여행지를 모아봤어요.' : cat.label
+          pushMessage('assistant', <span>{intro}</span>)
+          const cards = buildCards(spots, cat?.label)
+          if (cards.length) pushMessage('cards', null, cards)
+        } else {
+          pushMessage('assistant', <span>관련된 관광지를 아직 찾지 못했어요. 다른 키워드로도 물어봐 주세요!</span>)
+        }
       } catch (e) {
-        console.error('tourist_spots 요청 실패:', e.responseText || e)
-        spots = await fetchTouristSpotsFallback()
+        console.error('관광지 로드 오류:', e.responseText || e)
+        pushMessage('assistant', <span>관광지 정보를 불러올 수 없어요. 잠시 후 다시 시도해주세요.</span>)
       }
-      if (!spots.length && cat?.query) {
-        // 카테고리 검색 결과가 비면 전체 조회 폴백
-        spots = await fetchTouristSpots()
-      }
-      if (spots.length) {
-        const intro = cat ?
-          (cat.label.includes('역사') ? '서울에서 역사와 문화를 느낄 수 있는 공간을 추천해드릴게요.' :
-           cat.label.includes('핫플') ? '요즘 인기 있는 핫플레이스를 중심으로 일정을 제안드릴게요.' :
-           cat.label.includes('자연') ? '도심 속에서 자연을 느낄 수 있는 힐링 스팟을 추천합니다.' :
-           cat.label.includes('쇼핑') ? '쇼핑과 미식이 즐거운 코스로 여행지를 모아봤어요.' : cat.label)
-          : '추천 여행지를 안내드릴게요.'
-        pushMessage('assistant', <span>{intro}</span>)
-        const cards = buildCards(spots, cat?.label)
-        if (cards.length) pushMessage('cards', null, cards)
-      } else {
-        pushMessage('assistant', <span>관련된 관광지를 아직 찾지 못했어요. 다른 키워드로도 물어봐 주세요!</span>)
-      }
-    } catch (e) {
-      console.error('관광지 로드 오류:', e.responseText || e)
-      pushMessage('assistant', <span>관광지 정보를 불러올 수 없어요. 잠시 후 다시 시도해주세요.</span>)
     }
 
     // 날씨
