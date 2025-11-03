@@ -15,20 +15,66 @@ class TouristDetailSerializer(serializers.ModelSerializer):
         model = TouristDetail
         fields = '__all__'
 
-# 사용자별 여행 계획 직렬화기
-class UserTourPlanSerializer(serializers.ModelSerializer):
+def _generate_title(user_id: str) -> str:
+    count = MemberTrip.objects.filter(user_id=user_id).count() + 1
+    return f"untitled-{count}"
 
+
+class UserTourPlanReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = MemberTrip
-        fields = '__all__'
+        fields = ['trip_id', 'user_id', 'status', 'trip_title', 'travel_date', 'created_at', 'updated_at']
 
 
-# 여행별 관광지 목록 직렬화기
-class UserTourItinerarySerializer(serializers.ModelSerializer):
+class UserTourPlanCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MemberTrip
+        fields = ['status', 'trip_title', 'travel_date']
 
+    def create(self, validated_data):
+        user_id = self.context.get('user_id')
+        if not user_id:
+            raise serializers.ValidationError({"user_id": "user_id is required"})
+        title = validated_data.get('trip_title')
+        if not title:
+            validated_data['trip_title'] = _generate_title(user_id)
+        return MemberTrip.objects.create(user_id=user_id, **validated_data)
+
+
+class UserTourPlanUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MemberTrip
+        fields = ['status', 'trip_title', 'travel_date']
+
+    def update(self, instance, validated_data):
+        title = validated_data.get('trip_title')
+        if title == '':
+            validated_data['trip_title'] = _generate_title(instance.user_id)
+        return super().update(instance, validated_data)
+
+
+class UserTourItineraryReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = MemberTripItinerary
-        fields = '__all__'
+        fields = ['trip_id', 'seq', 'content_id', 'visit_date', 'stay_time']
+
+
+class UserTourItineraryCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MemberTripItinerary
+        fields = ['seq', 'content_id', 'visit_date', 'stay_time']
+
+    def create(self, validated_data):
+        trip_id = self.context.get('trip_id')
+        if trip_id is None:
+            raise serializers.ValidationError({"trip_id": "trip_id is required"})
+        return MemberTripItinerary.objects.create(trip_id_id=trip_id, **validated_data)
+
+
+class UserTourItineraryUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MemberTripItinerary
+        fields = ['seq', 'content_id', 'visit_date', 'stay_time']
 
 
 class JjimSerializer(serializers.ModelSerializer):
