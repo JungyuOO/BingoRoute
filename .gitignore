@@ -17,3 +17,9 @@ minwoo/
 __pycache__/*
 *.pyc
 .history
+
+# Generated during pipeline runs
+backend/accounts/migrations/0001_initial.py
+backend/service/migrations/0001_initial.py
+backend/service/api/weather/seoul_mid_latest.csv
+backend/service/api/weather/seoul_short_latest.csv
