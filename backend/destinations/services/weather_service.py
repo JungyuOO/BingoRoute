@@ -7,53 +7,104 @@ from .weather_api import SEOUL_GU, get_current_weather, get_short_forecast, get_
 
 class WeatherService:
     """날씨 데이터 수집 및 CSV 저장/조회 서비스"""
-    # NOTE:
-    # 프로젝트 요구에 따라 api_data 폴더의 CSV 더미 데이터 사용을 잠정 중단합니다.
-    # 아래 메서드들에서 CSV 파일을 읽거나 쓰는 부분을 안전하게 우회하고,
-    # 추후 실제 API 연동 시 주석을 원복하거나 API 결과를 직접 반환하도록 교체하세요.
-    
-    # collect_and_save_weather_data 메서드 제거됨 - collect_save_and_load 사용
-    
+
     @staticmethod
     def get_current_weather_summary():
-        """현재 시간대 날씨 정보 반환 (단기 예보에서 현재 시간대 데이터 추출)"""
+        """api_data의 최신 단기 예보 CSV에서 서울 현재 요약 정보를 반환"""
         try:
-            # CSV 더미 데이터 사용 중단: 빈 결과 반환 (API 직결 예정)
-            # 기존 CSV 경로 탐색/로드 로직은 보존하되 비활성화합니다.
-            # csv_file = WeatherService._get_latest_weather_csv()
-            # if not csv_file:
-            #     WeatherService.collect_and_save_to_csv()
-            #     csv_file = WeatherService._get_latest_weather_csv()
-            # if not csv_file:
-            #     return {}
-            # df = pd.read_csv(csv_file)
-            return {}
-            
-            # 서울 시간대 기준으로 현재 시간 계산
+            csv_file = WeatherService._get_latest_weather_csv()
+            if not csv_file or not os.path.exists(csv_file):
+                return { 'summary': '날씨 데이터 파일이 없습니다.' }
+
+            # CSV는 한글 헤더 + BOM 가능성 → utf-8-sig로 로드
+            df = pd.read_csv(csv_file, encoding='utf-8-sig')
+            required_cols = {'지역', '타입', '날짜', '시간', '항목', '값'}
+            if not required_cols.issubset(set(df.columns)):
+                return { 'summary': '날씨 CSV 형식이 예상과 다릅니다.' }
+
+            # KST 기준 현재 날짜/시간
             import pytz
             seoul_tz = pytz.timezone('Asia/Seoul')
             now_seoul = datetime.datetime.now(seoul_tz)
-            today = now_seoul.strftime("%Y%m%d")
-            current_hour = now_seoul.hour
-            
-            # 현재 시간에 가장 가까운 예보 시간 찾기 (3시간 간격)
-            forecast_hours = [0, 3, 6, 9, 12, 15, 18, 21]
+            today = now_seoul.strftime('%Y%m%d')
+            current_hhmm = int(now_seoul.strftime('%H%M'))
 
-            # 현재 시간 이하 중 가장 가까운 값 우선
-            past_hours = [h for h in forecast_hours if h <= current_hour]
-            if past_hours:
-                closest_hour = max(past_hours)
-            else:
-                closest_hour = min(forecast_hours)  # 자정 직후 같은 경우
-            target_time = f"{closest_hour:02d}00"
+            # 문자열 정규화
+            df['날짜'] = df['날짜'].astype(str)
+            df['시간'] = df['시간'].astype(int)
 
-            
-            # 기존 CSV 기반 가공 로직 주석화 (위에서 빈 dict 반환)
-            # return weather_by_region
-            
+            # 오늘 데이터 중 현재 시각 이전(포함) 가장 가까운 값을 사용
+            df_today = df[df['날짜'] == today]
+            if df_today.empty:
+                # 오늘 데이터가 없으면 최신 날짜 사용
+                latest_day = df['날짜'].astype(str).max()
+                df_today = df[df['날짜'].astype(str) == latest_day]
+
+            df_today = df_today[df_today['시간'] <= current_hhmm]
+            if df_today.empty:
+                # 자정 직후 같은 경우: 가장 이른 시각 사용
+                min_time = df[df['날짜'] == df_today['날짜'].iloc[0] if not df_today.empty else df['날짜'].max()]['시간'].min()
+                df_today = df[df['시간'] == min_time]
+
+            # 지역·항목별 최근 시각 값만 추출
+            df_today = df_today.sort_values(['지역', '시간'])
+            latest = df_today.groupby(['지역', '항목']).tail(1)
+            pivot = latest.pivot(index='지역', columns='항목', values='값')
+
+            # 수치 변환 및 요약
+            def to_float(val):
+                try:
+                    return float(str(val).replace('mm', '').replace('cm', ''))
+                except Exception:
+                    return None
+
+            tmp = pivot.get('TMP')
+            wsd = pivot.get('WSD')
+            pcp = pivot.get('PCP')  # 강수없음/수치(mm)
+
+            mean_tmp = float(tmp.astype(float).mean()) if tmp is not None else None
+            mean_wsd = float(wsd.astype(float).mean()) if wsd is not None else None
+
+            any_rain = False
+            if pcp is not None:
+                any_rain = pcp.apply(lambda v: str(v).strip() not in ['강수없음', '0', '0mm', '0.0']).any()
+
+            closest_time = int(df_today['시간'].max()) if not df_today.empty else current_hhmm
+            closest_time_str = f"{closest_time:04d}"
+
+            parts = []
+            if mean_tmp is not None:
+                parts.append(f"기온 {mean_tmp:.1f}℃")
+            if mean_wsd is not None:
+                parts.append(f"풍속 {mean_wsd:.1f} m/s")
+            parts.append('강수 중' if any_rain else '강수 없음')
+            summary = f"현재 서울 {parts[0]}" if parts else "현재 날씨 정보를 불러오지 못했습니다."
+            if len(parts) > 1:
+                summary += f", {', '.join(parts[1:])}"
+            summary += f" (기준 {today} {closest_time_str})"
+
+            # 상세 지역 데이터도 포함(선택)
+            regions = []
+            for region in pivot.index:
+                regions.append({
+                    'region': region,
+                    'TMP': float(pivot.at[region, 'TMP']) if 'TMP' in pivot.columns and pd.notna(pivot.at[region, 'TMP']) else None,
+                    'WSD': float(pivot.at[region, 'WSD']) if 'WSD' in pivot.columns and pd.notna(pivot.at[region, 'WSD']) else None,
+                    'PCP': pivot.at[region, 'PCP'] if 'PCP' in pivot.columns and pd.notna(pivot.at[region, 'PCP']) else None,
+                })
+
+            return {
+                'summary': summary,
+                'temperature': round(mean_tmp, 1) if mean_tmp is not None else None,
+                'windSpeed': round(mean_wsd, 1) if mean_wsd is not None else None,
+                'precipitation': '강수' if any_rain else '없음',
+                'time': f"{today}{closest_time_str}",
+                'regions': regions,
+            }
+
         except Exception as e:
             print(f"❌ 현재 날씨 조회 오류: {e}")
-            return {}
+            return { 'summary': '현재 날씨 정보를 불러오지 못했습니다.' }
     
     @staticmethod
     def get_weather_forecast(region=None, days=3):
@@ -124,12 +175,20 @@ class WeatherService:
     
     @staticmethod
     def _get_latest_weather_csv():
-        """가장 최신의 날씨 CSV 파일 경로 반환"""
+        """가장 최신의 단기예보(seoul_short_*.csv) 파일 경로 반환"""
         api_data_dir = os.path.join(settings.BASE_DIR, 'api_data')
         if not os.path.exists(api_data_dir):
             return None
-        # CSV 더미 데이터 탐색 비활성화
-        return None
+        candidates = [
+            os.path.join(api_data_dir, f)
+            for f in os.listdir(api_data_dir)
+            if f.startswith('seoul_short_') and f.endswith('.csv')
+        ]
+        if not candidates:
+            return None
+        # 파일명 또는 생성시간 기준 최신 선택
+        candidates.sort(key=lambda p: os.path.getmtime(p), reverse=True)
+        return candidates[0]
     
     @staticmethod
     def get_mid_forecast_for_algorithm():

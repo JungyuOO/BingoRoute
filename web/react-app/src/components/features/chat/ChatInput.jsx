@@ -11,6 +11,10 @@ const ChatInput = ({ onSend }) => {
   }
 
   const onKeyDown = (e) => {
+    // 한글 IME 조합 중 Enter가 눌리면 중복 전송 방지
+    const composing = e.isComposing || e.nativeEvent?.isComposing || e.keyCode === 229
+    if (composing) return
+
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend()
@@ -33,4 +37,3 @@ const ChatInput = ({ onSend }) => {
 }
 
 export default ChatInput
-

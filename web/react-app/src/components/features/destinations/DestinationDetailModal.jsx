@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from '../../ui'
 import { useAuth } from '../../../hooks/api/useAuth'
@@ -9,7 +9,6 @@ const DestinationDetailModal = ({
   destination,
   isOpen,
   onClose,
-  onNavigate,
   isSaved,
   onToggleSave,
 }) => {
@@ -136,14 +135,14 @@ const DestinationDetailModal = ({
               <Button
                 variant="primary"
                 onClick={handleCreateNewPlan}
-                style={{ marginTop: '20px', width: '100%' }}
+                className="create-plan-button"
               >
                 + 새 여행 계획 만들기
               </Button>
               <Button
                 variant="ghost"
                 onClick={() => setShowPlanModal(false)}
-                style={{ marginTop: '8px', width: '100%' }}
+                className="close-button"
               >
                 닫기
               </Button>

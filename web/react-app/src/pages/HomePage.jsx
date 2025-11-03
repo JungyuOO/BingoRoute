@@ -24,31 +24,24 @@ const HomePage = () => {
 
   // 🍑 Django API 연동으로 수정
   // useEffect(() => {
-  //   if (DESTINATIONS.length === 0) {
-  //     console.warn('⚠️ Django API 미연동 상태 — 여행지 데이터 없음')
+  //   const fetchDestinations = async () => {
+  //     try {
+  //       const response = await fetch('http://localhost:8000/api/destinations/')
+  //       const data = await response.json()
+
+  //       if (response.ok && data.success) {
+  //         setDestinations(data.data)
+  //       } else {
+  //         console.error('❌ 여행지 데이터 불러오기 실패:', data.error)
+  //       }
+  //     } catch (error) {
+  //       console.error('⚠️ Django API 요청 오류:', error)
+  //     }
   //   }
+
+  //   fetchDestinations()
   // }, [])
 
-  // 🍑 Django API 연동시킬 때 활성화
-  useEffect(() => {
-    const fetchDestinations = async () => {
-      try {
-        const response = await fetch('http://localhost:8000/api/destinations/')
-        const data = await response.json()
-  
-        if (response.ok) {
-          setDestinations(data.results)
-        } else {
-          console.error('❌ 여행지 데이터 불러오기 실패:', data)
-        }
-      } catch (error) {
-        console.error('⚠️ Django API 요청 오류:', error)
-      }
-    }
-  
-    fetchDestinations()
-  }, [])
-  
 
   // 유니크 지역/테마 목록 생성
   const areas = Array.from(new Set(destinations.map(d => d.area)))

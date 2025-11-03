@@ -66,7 +66,7 @@ const TripDetailModal = ({ trip, isOpen, onClose }) => {
             <button type="button" className="nav-btn left" onClick={prev} disabled={index === 0} aria-label="이전">‹</button>
 
             <div>
-              {/* Hero section identical to destination modal */}
+              {/* 모달창 맨 상단 여행지명 부분 */}
               <div className="modal-hero">
                 <div className="modal-hero__tags">
                   <span className="modal-tag">{index + 1} / {steps.length}</span>
@@ -78,13 +78,13 @@ const TripDetailModal = ({ trip, isOpen, onClose }) => {
                 <p className="modal-hero__meta">📍{current?.area} · ⭐ {current?.rating}</p>
               </div>
 
-              {/* Detail text */}
+              {/* 상세정보 부분 */}
               <div className="modal-section">
                 <h3>상세 정보</h3>
                 <p>{current?.long || current?.short}</p>
               </div>
 
-              {/* Visit info grid with same labels/logic as destination modal */}
+              {/* 모달창 방문정보 부분*/}
               <div className="modal-section">
                 <h3>방문 정보</h3>
                 <div className="modal-info-grid">
