@@ -33,5 +33,13 @@ python manage.py makemigrations --noinput
 echo "Running migrations..."
 python manage.py migrate --noinput
 
+if [ "${RUN_PIPELINE_ON_STARTUP:-1}" = "1" ]; then
+  echo "Running tourist data pipeline..."
+  python data-pipeline/run_pipeline.py || {
+    echo "Pipeline failed; skip starting server" >&2
+    exit 1
+  }
+fi
+
 echo "Starting Django server..."
 exec python manage.py runserver 0.0.0.0:8000
