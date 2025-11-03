@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { DESTINATIONS } from '../data/destinations'
 import { WeatherSection } from '../components/features/weather'
 import { DestinationsFilter, DestinationsGrid } from '../components/features/destinations'
 import HeroSection from "../components/features/home/HeroSection";
@@ -15,25 +14,15 @@ const HomePage = () => {
   const navigate = useNavigate()
 
   // ⭐ 여행지 데이터를 저장할 상태, React가 여행 데이터 기억 및 관리할 공간
-  // destinations -> 화면에서 사용할 실제 데이터 목록
-  // setDestinations -> API 호출 후 데이터 업로드 시 사용
-  // useState(DESTINATIONS || []) -> API 연결 전) 더미데이터 임시 사용, 연결 후) API 데이터로 덮어씀
-  const [destinations, setDestinations] = useState(DESTINATIONS || [])
+  const [destinations, setDestinations] = useState([]) // 🍑 여행지API 활성화로 수정 완료
 
-  const [filter, setFilter] = useState('')
   // 추천 여행지 필터링: 지역/테마
+  const [filter, setFilter] = useState('')
   const [selectedArea, setSelectedArea] = useState('ALL')
   const [selectedTheme, setSelectedTheme] = useState('ALL')
   const [selectedDistrict, setSelectedDistrict] = useState('강남구')
 
-  // ⭐ Django API 연동 전 임시 예외 처리
-  useEffect(() => {
-    if (DESTINATIONS.length === 0) {
-      console.warn('⚠️ Django API 미연동 상태 — 여행지 데이터 없음')
-    }
-  }, [])
-
-  // ⭐ Django API 연동시킬 때 활성화
+  // 🍑 Django API 연동으로 수정
   // useEffect(() => {
   //   const fetchDestinations = async () => {
   //     try {
@@ -55,9 +44,9 @@ const HomePage = () => {
 
 
   // 유니크 지역/테마 목록 생성
-  const areas = Array.from(new Set(DESTINATIONS.map(d => d.area)))
-  // const areas = Array.from(new Set(destinations.map(d => d.area))) ⭐ API 연동 시 위 코드 지우고 이 코드 활성화
-  const themes = Array.from(new Set(DESTINATIONS.flatMap(d => d.tags)))
+  const areas = Array.from(new Set(destinations.map(d => d.area)))
+  const themes = Array.from(new Set(destinations.flatMap(d => d.tags || [])))
+
 
   // 첫 번째 구를 기본 선택
   useEffect(() => {
@@ -81,7 +70,7 @@ const HomePage = () => {
     navigate('/planner')
   }
 
-  const filteredDestinations = DESTINATIONS.filter(d => {
+  const filteredDestinations = destinations.filter(d => {
     const areaOk = selectedArea === 'ALL' || d.area === selectedArea
     const themeOk = selectedTheme === 'ALL' || d.tags.includes(selectedTheme)
 

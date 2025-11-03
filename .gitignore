@@ -15,6 +15,7 @@ minwoo/
 
 # ETC
 __pycache__/
+*.pyc
 *.py[cod]
 *.pyo
 *.pyd
