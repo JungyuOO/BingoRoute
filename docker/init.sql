@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS my_vectors (
 
 -- 회원 테이블
 CREATE TABLE IF NOT EXISTS accounts_user (
-    id VARCHAR(50) PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     password VARCHAR(128) NOT NULL,
     last_login TIMESTAMPTZ,
     is_superuser BOOLEAN NOT NULL DEFAULT FALSE,
