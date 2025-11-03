@@ -14,6 +14,40 @@ venv/
 minwoo/
 
 # ETC
-__pycache__/*
+__pycache__/
 *.pyc
+*.py[cod]
+*.pyo
+*.pyd
+
+# 가상환경
+.venv/
+env/
+venv/
+
+# 데이터베이스 마이그레이션 (Django 등)
+migrations/
+*/migrations/
+!*/migrations/__init__.py
+
+# 빌드/배포 파일
+build/
+dist/
+*.egg-info/
+
+# 로그 파일
+*.log
+
+# OS / IDE 관련
+.DS_Store
+.vscode/
+.idea/
+
+# Jupyter Notebook 체크포인트
+.ipynb_checkpoints/
+
+# 기타 불필요한 캐시
+*.sqlite3
+
+# ETC
 .history

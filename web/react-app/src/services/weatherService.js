@@ -1,10 +1,14 @@
+// 🍑`현재 csv로만 들어가있어서 API 요청해서 받는 걸로 바뀔거라
+// 추후 수정 예정
+// 기존 api/weather/current ➡️ 현재 api/service/weather 수정
+
 const API_BASE_URL = 'http://localhost:8000'
 
 export const weatherService = {
   // 현재 날씨 정보 조회
   async getCurrentWeather() {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/weather/current/`)
+      const response = await fetch(`${API_BASE_URL}/api/service/weather/`)
       const data = await response.json()
       
       if (data.success) {
@@ -26,7 +30,7 @@ export const weatherService = {
       if (region) params.append('region', region)
       params.append('days', days.toString())
       
-      const response = await fetch(`${API_BASE_URL}/api/weather/forecast/?${params}`)
+      const response = await fetch(`${API_BASE_URL}/api/service/weather/forecast/?${params}`)
       const data = await response.json()
       
       if (data.success) {
@@ -47,7 +51,7 @@ export const weatherService = {
       const params = new URLSearchParams()
       params.append('region', region)
       
-      const response = await fetch(`${API_BASE_URL}/api/weather/mid-forecast/?${params}`)
+      const response = await fetch(`${API_BASE_URL}/api/service/weather/mid-forecast/?${params}`)
       const data = await response.json()
       
       if (data.success) {
@@ -65,7 +69,7 @@ export const weatherService = {
   // 날씨 통계 조회
   async getWeatherStatistics() {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/weather/statistics/`)
+      const response = await fetch(`${API_BASE_URL}/api/service/weather/statistics/`)
       const data = await response.json()
       
       if (data.success) {
@@ -87,7 +91,7 @@ export const weatherService = {
       if (date) params.append('date', date)
       if (time) params.append('time', time)
       
-      const response = await fetch(`${API_BASE_URL}/api/weather/by-time/?${params}`)
+      const response = await fetch(`${API_BASE_URL}/api/service/weather/by-time/?${params}`)
       const data = await response.json()
       
       if (data.success) {
