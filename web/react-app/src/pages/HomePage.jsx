@@ -17,8 +17,9 @@ const HomePage = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [loadMoreError, setLoadMoreError] = useState(null)
 
-  const [filter, setFilter] = useState('')
+
   // 추천 여행지 필터링: 지역/테마
+  const [filter, setFilter] = useState('')
   const [selectedArea, setSelectedArea] = useState('ALL')
   const [selectedTheme, setSelectedTheme] = useState('ALL')
   const [selectedDistrict, setSelectedDistrict] = useState('강남구')
