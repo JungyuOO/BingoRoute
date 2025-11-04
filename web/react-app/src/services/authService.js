@@ -51,3 +51,29 @@ export async function verifyEmailCode(email, code) {
   if (!res.ok) throw new Error(data.detail || '인증 실패')
   return data
 }
+
+export async function validateSession(accessToken) {
+  const res = await fetch(`${API_BASE}/api/auth/session/`, {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+    },
+  })
+
+  let data = null
+  try {
+    data = await res.json()
+  } catch (error) {
+    // Ignore JSON parsing errors for empty responses
+  }
+
+  if (!res.ok) {
+    const message = data?.detail || '세션 검증에 실패했습니다.'
+    const error = new Error(message)
+    error.status = res.status
+    throw error
+  }
+
+  return data
+}
