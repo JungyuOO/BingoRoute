@@ -8,15 +8,7 @@ from .user_trips_api import (
 )
 
 from .user_jjim_api import UserJjimView
-
-from .load_weather import (
-    current_weather,
-    weather_forecast,
-    collect_weather_data,
-    get_mid_forecast_for_algorithm,
-    get_weather_statistics,
-    get_weather_by_time,
-)
+from .weather_api import current_weather
 
 urlpatterns = [
     path('tourist_spots/', TouristSpotAllView.as_view(), name='tourist-spot-all'),
@@ -30,9 +22,4 @@ urlpatterns = [
     path('user/jjim/', UserJjimView.as_view(), name='user-jjim'),
   
     path('weather/current/', current_weather, name='weather-current'),
-    path('weather/forecast/', weather_forecast, name='weather-forecast'),
-    path('weather/collect/', collect_weather_data, name='weather-collect'),
-    path('weather/mid-forecast/', get_mid_forecast_for_algorithm, name='weather-mid-forecast'),
-    path('weather/statistics/', get_weather_statistics, name='weather-statistics'),
-    path('weather/by-time/', get_weather_by_time, name='weather-by-time'),
 ]
