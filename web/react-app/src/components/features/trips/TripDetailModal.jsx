@@ -18,10 +18,22 @@ const TripDetailModal = ({ trip, isOpen, onClose, resolveDestination }) => {
   }, [resolveDestination])
 
   const steps = useMemo(() => {
-    const ids = trip?.destinations || trip?.routes || []
-    // map id or name to destination object
-    return ids
-      .map((idOrName) => findDestination(idOrName))
+    const itineraries = trip?.itineraries || []
+
+    return itineraries
+      .map((item) => {
+        const resolved = findDestination(item.content_id)
+        if (resolved) return resolved
+
+        return {
+          id: item.content_id,
+          name: `관광지 ${item.content_id}`,
+          area: '정보 없음',
+          rating: '정보 없음',
+          tags: [],
+          short: '상세 정보가 준비되지 않았습니다.',
+        }
+      })
       .filter(Boolean)
   }, [trip, findDestination])
 
@@ -115,9 +127,10 @@ const TripDetailModal = ({ trip, isOpen, onClose, resolveDestination }) => {
           <div>
             <h2>{trip?.title || '내 여행 계획'}</h2>
             <ul className="destination-modal__tags" style={{marginTop:8}}>
-              {(trip?.destinations || trip?.routes || []).map((t, i) => (
-                <li key={`${t}-${i}`}>{findDestination(t)?.name || t}</li>
-              ))}
+              {(trip?.itineraries || []).map((itinerary, i) => {
+                const id = itinerary.content_id
+                return <li key={`${id}-${itinerary.seq}-${i}`}>{findDestination(id)?.name || id}</li>
+              })}
             </ul>
           </div>
           <button type="button" className="destination-modal__close" onClick={onClose} aria-label="닫기">×</button>
