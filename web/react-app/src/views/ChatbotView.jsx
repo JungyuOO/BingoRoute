@@ -90,6 +90,36 @@ const buildCards = (spots, intro) => {
     .filter(Boolean)
 }
 
+const formatWeatherSummary = (payload) => {
+  if (!payload) return null
+
+  if (typeof payload.summary === 'string' && payload.summary.trim()) {
+    return payload.summary.trim()
+  }
+
+  const data = payload.data || null
+  if (!data || !data.regions || typeof data.regions !== 'object') return null
+
+  const [regionName, regionData] = Object.entries(data.regions).find(([, info]) => info && Object.keys(info).length) || []
+  if (!regionName || !regionData) return null
+
+  const temperature = regionData.temperature ?? regionData.temp ?? '정보 없음'
+  const wind = regionData.wind_speed ?? regionData.wind ?? '정보 없음'
+  const rainfallRaw = regionData.precipitation ?? regionData.rainfall ?? '정보 없음'
+  const rainfall = rainfallRaw === '0' ? '강수 없음' : rainfallRaw
+  const advice = regionData.advice
+
+  const timestampLabel = [data.display_date, data.display_time].filter(Boolean).join(' ')
+  const parts = []
+  if (timestampLabel) parts.push(`${timestampLabel} 기준`)
+  parts.push(`${regionName} 기온 ${temperature}`)
+  if (wind && wind !== '정보 없음' && wind !== '정보없음') parts.push(`풍속 ${wind}`)
+  if (rainfall && rainfall !== '정보 없음' && rainfall !== '정보없음') parts.push(`강수량 ${rainfall}`)
+
+  const summary = `${parts.join(', ')}.` + (advice ? ` ${advice}` : '')
+  return summary.trim()
+}
+
 const ChatbotView = () => {
   const [messages, setMessages] = useState([{ id: 1, role: 'assistant', content: systemGreeting }])
   const [chips, setChips] = useState(INITIAL_CHIPS)
@@ -289,7 +319,7 @@ const ChatbotView = () => {
       try {
         // 백엔드 라우팅(/api/service/weather/current/)에 맞춰 엔드포인트 수정
         const w = await requestJson(`${API_BASE}/api/service/weather/current/`)
-        const summary = w?.summary || w?.data?.summary || '날씨 정보를 가져오지 못했어요.'
+        const summary = formatWeatherSummary(w) || '날씨 정보를 가져오지 못했어요.'
         pushMessage('assistant', <span>{summary}</span>)
       } catch (e) {
         pushMessage('assistant', <span>날씨 정보를 불러오는 중 오류가 발생했어요.</span>)
