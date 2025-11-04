@@ -67,10 +67,45 @@ class UserTourPlanReadSerializer(serializers.ModelSerializer):
         ]
 
 
+class UserTourPlanItineraryInputSerializer(serializers.Serializer):
+    seq = serializers.IntegerField(
+        required=False,
+        min_value=1,
+        help_text="여행지 순서를 직접 지정할 수 있습니다. 지정하지 않으면 입력된 순서대로 저장됩니다.",
+        style={'example': 1},
+    )
+    content_id = serializers.SlugRelatedField(
+        source='content',
+        slug_field='content_id',
+        queryset=TouristSpot.objects.all(),
+        help_text="추가할 첫 여행지의 content_id (예: 'A1234567').",
+        style={'example': 'A1234567'},
+    )
+    visit_date = serializers.DateField(
+        required=False,
+        allow_null=True,
+        help_text="방문 예정일 (예: '2025-11-04').",
+        style={'example': '2025-11-04'},
+    )
+    stay_time = serializers.DurationField(
+        required=False,
+        allow_null=True,
+        help_text="머무를 예상 시간. 예: '05:00:00'(5시간), '1 00:00:00'(1일).",
+        style={'example': '05:00:00'},
+    )
+
+
 class UserTourPlanCreateSerializer(serializers.ModelSerializer):
+    itineraries = UserTourPlanItineraryInputSerializer(
+        many=True,
+        write_only=True,
+        required=False,
+        help_text="신규 여행 계획에 포함할 일정 목록입니다. 제공된 순서대로 저장됩니다.",
+    )
+
     class Meta:
         model = MemberTrip
-        fields = ['status', 'trip_title', 'travel_date']
+        fields = ['status', 'trip_title', 'travel_date', 'itineraries']
 
     def create(self, validated_data):
         user_id = self.context.get('user_id')
@@ -79,7 +114,25 @@ class UserTourPlanCreateSerializer(serializers.ModelSerializer):
         title = validated_data.get('trip_title')
         if not title:
             validated_data['trip_title'] = _generate_title(user_id)
-        return MemberTrip.objects.create(user_id=user_id, **validated_data)
+        itineraries_data = validated_data.pop('itineraries', [])
+
+        with transaction.atomic():
+            trip = MemberTrip.objects.create(user_id=user_id, **validated_data)
+
+            if itineraries_data:
+                entries = [
+                    MemberTripItinerary(
+                        trip_id=trip,
+                        seq=itinerary.get('seq') or index,
+                        content=itinerary['content'],
+                        visit_date=itinerary.get('visit_date'),
+                        stay_time=itinerary.get('stay_time'),
+                    )
+                    for index, itinerary in enumerate(itineraries_data, start=1)
+                ]
+                MemberTripItinerary.objects.bulk_create(entries)
+
+        return trip
 
 
 class UserTourPlanUpdateSerializer(serializers.ModelSerializer):
