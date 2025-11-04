@@ -65,6 +65,7 @@ const DestinationDetailModal = ({
 
   if (!isOpen || typeof document === 'undefined') return null
   const modalRoot = document.getElementById('modal-root') || document.body
+  const heroImage = destination?.raw?.firstimage || destination?.raw?.firstimage2 || destination?.image || null
 
   return createPortal(
     (
@@ -85,6 +86,16 @@ const DestinationDetailModal = ({
           </div>
 
           <div className="destination-modal__content">
+            {heroImage && (
+              <div className="modal-hero-image">
+                <img
+                  src={heroImage}
+                  alt={destination?.name ? `${destination.name} 대표 이미지` : '관광지 이미지'}
+                  className="modal-hero-image__img"
+                  loading="lazy"
+                />
+              </div>
+            )}
             <div className="modal-hero">
               <div className="modal-hero__tags">
                 {destination.tags?.map(tag => (

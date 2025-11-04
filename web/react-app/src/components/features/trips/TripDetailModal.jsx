@@ -119,6 +119,7 @@ const TripDetailModal = ({ trip, isOpen, onClose, resolveDestination }) => {
   if (!isOpen || typeof document === 'undefined') return null
 
   const destination = current
+  const heroImage = destination?.raw?.firstimage || destination?.raw?.firstimage2 || destination?.image || null
 
   return createPortal(
     <div className="destination-modal__backdrop" onClick={onClose}>
@@ -144,6 +145,16 @@ const TripDetailModal = ({ trip, isOpen, onClose, resolveDestination }) => {
 
             <div>
               {/* 모달창 맨 상단 여행지명 부분 */}
+              {heroImage && (
+                <div className="modal-hero-image">
+                  <img
+                    src={heroImage}
+                    alt={destination?.name ? `${destination.name} 대표 이미지` : '관광지 이미지'}
+                    className="modal-hero-image__img"
+                    loading="lazy"
+                  />
+                </div>
+              )}
               <div className="modal-hero">
                 <div className="modal-hero__tags">
                   <span className="modal-tag">{index + 1} / {steps.length}</span>
