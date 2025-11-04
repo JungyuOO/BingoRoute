@@ -1,3 +1,4 @@
+from django.db.models import OuterRef, Subquery
 from rest_framework import generics
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from .models import TouristSpot, TouristDetail
@@ -30,7 +31,16 @@ class TouristSpotAllView(generics.ListAPIView):
     serializer_class = TouristSpotSerializer
 
     def get_queryset(self):
-        qs = TouristSpot.objects.all().order_by("content_id")
+        detail_qs = TouristDetail.objects.filter(content_id=OuterRef("content_id")).order_by("content_id")
+
+        qs = (
+            TouristSpot.objects.all()
+            .annotate(
+                detail_sigungu=Subquery(detail_qs.values("sigungu_name")[:1]),
+                detail_address=Subquery(detail_qs.values("address")[:1]),
+            )
+            .order_by("content_id")
+        )
         category = self.request.query_params.get("category_name")
         content =  self.request.query_params.get("content_id")
         if content:

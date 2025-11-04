@@ -11,6 +11,10 @@ const DestinationDetailModal = ({
   onClose,
   isSaved,
   onToggleSave,
+  detail,
+  detailLoading = false,
+  detailError = null,
+  onRetryDetail,
 }) => {
   const { isAuthenticated, promptLogin } = useAuth()
   const [showPlanModal, setShowPlanModal] = useState(false)
@@ -85,20 +89,34 @@ const DestinationDetailModal = ({
 
             <div className="modal-section">
               <h3>상세 정보</h3>
-              <p>{destination.long || destination.short}</p>
+              {detailLoading ? (
+                <p>상세 정보를 불러오는 중입니다...</p>
+              ) : detailError ? (
+                <div>
+                  <p style={{ color: 'red', marginBottom: '8px' }}>{detailError}</p>
+                  {typeof onRetryDetail === 'function' && (
+                    <Button variant="ghost" onClick={onRetryDetail}>
+                      다시 시도
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <p>{detail?.description || destination.long || destination.short}</p>
+              )}
             </div>
 
             <div className="modal-section">
               <h3>방문 정보</h3>
               <div className="modal-info-grid">
-                <div><strong>전화번호</strong><p>{destination.phone || '정보 없음'}</p></div>
-                <div><strong>휴무일</strong><p>{destination.closedDays || '정보 없음'}</p></div>
-                <div><strong>운영시간</strong><p>{destination.operatingHours || '정보 없음'}</p></div>
-                <div><strong>운영계절</strong><p>{destination.operatingSeason || '정보 없음'}</p></div>
-                <div><strong>주차장</strong><p>{destination.parking ? '이용 가능' : '이용 불가'}</p></div>
-                <div><strong>유모차</strong><p>{destination.strollerFriendly ? '이용 가능' : '이용 불가'}</p></div>
-                <div><strong>반려동물 입장</strong><p>{destination.petFriendly ? '입장 가능' : '입장 불가'}</p></div>
-                <div><strong>신용카드</strong><p>{destination.creditCard ? '사용 가능' : '사용 불가'}</p></div>
+                <div><strong>주소</strong><p>{detail?.address || destination.area || '정보 없음'}</p></div>
+                <div><strong>전화번호</strong><p>{detail?.tel || '정보 없음'}</p></div>
+                <div><strong>휴무일</strong><p>{detail?.restdate || '정보 없음'}</p></div>
+                <div><strong>운영시간</strong><p>{detail?.usetime || '정보 없음'}</p></div>
+                <div><strong>운영계절</strong><p>{detail?.useseason || '정보 없음'}</p></div>
+                <div><strong>주차장</strong><p>{detail?.facilities?.parking ? '이용 가능' : '이용 불가'}</p></div>
+                <div><strong>유모차</strong><p>{detail?.facilities?.babyCarriage ? '이용 가능' : '이용 불가'}</p></div>
+                <div><strong>반려동물 입장</strong><p>{detail?.facilities?.pet ? '입장 가능' : '입장 불가'}</p></div>
+                <div><strong>신용카드</strong><p>{detail?.facilities?.creditCard ? '사용 가능' : '사용 불가'}</p></div>
               </div>
             </div>
 

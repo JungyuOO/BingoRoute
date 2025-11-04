@@ -1,18 +1,28 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from '../../ui'
-import { DESTINATIONS } from '../../../data/destinations'
 import './TripDetailModal.css'
 import '../destinations/DestinationDetailModal.css'
 
-const TripDetailModal = ({ trip, isOpen, onClose }) => {
+import { DESTINATIONS } from '../../../data/destinations'
+
+const TripDetailModal = ({ trip, isOpen, onClose, resolveDestination }) => {
+  const findDestination = useCallback((idOrName) => {
+    if (!idOrName) return null
+    if (resolveDestination) {
+      const resolved = resolveDestination(idOrName)
+      if (resolved) return resolved
+    }
+    return DESTINATIONS.find(d => d.id === idOrName || d.name === idOrName) || null
+  }, [resolveDestination])
+
   const steps = useMemo(() => {
     const ids = trip?.destinations || trip?.routes || []
     // map id or name to destination object
     return ids
-      .map((idOrName) => DESTINATIONS.find(d => d.id === idOrName || d.name === idOrName))
+      .map((idOrName) => findDestination(idOrName))
       .filter(Boolean)
-  }, [trip])
+  }, [trip, findDestination])
 
   const [index, setIndex] = useState(0)
 
@@ -52,7 +62,7 @@ const TripDetailModal = ({ trip, isOpen, onClose }) => {
             <h2>{trip?.title || '내 여행 계획'}</h2>
             <ul className="destination-modal__tags" style={{marginTop:8}}>
               {(trip?.destinations || trip?.routes || []).map((t, i) => (
-                <li key={`${t}-${i}`}>{DESTINATIONS.find(d => d.id === t || d.name === t)?.name || t}</li>
+                <li key={`${t}-${i}`}>{findDestination(t)?.name || t}</li>
               ))}
             </ul>
           </div>

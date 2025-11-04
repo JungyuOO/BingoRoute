@@ -5,9 +5,26 @@ from .models import TouristSpot, TouristDetail, MemberTrip, MemberTripItinerary,
 
 # 관광지 직렬화기
 class TouristSpotSerializer(serializers.ModelSerializer):
+    area = serializers.SerializerMethodField()
+
     class Meta:
         model = TouristSpot
-        fields = '__all__'
+        fields = [
+            'content_id',
+            'title',
+            'firstimage',
+            'firstimage2',
+            'category_code',
+            'category_name',
+            'area',
+        ]
+
+    def get_area(self, obj):
+        return (
+            getattr(obj, 'detail_sigungu', None)
+            or getattr(obj, 'detail_address', None)
+            or ''
+        )
 
 # 관광지 상세 직렬화기
 class TouristDetailSerializer(serializers.ModelSerializer):
