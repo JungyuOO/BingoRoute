@@ -12,6 +12,7 @@ from .serializers import (
     UserTourItineraryUpdateSerializer,
 )
 
+from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 
 import logging
@@ -55,7 +56,15 @@ class UserTourPlanView(generics.ListCreateAPIView):
     serializer_class = UserTourPlanReadSerializer
 
     def get_queryset(self):
-        qs = MemberTrip.objects.all().order_by("travel_date")
+        itinerary_prefetch = Prefetch(
+            "itinerary_set",
+            queryset=MemberTripItinerary.objects.order_by("seq"),
+        )
+        qs = (
+            MemberTrip.objects.all()
+            .prefetch_related(itinerary_prefetch)
+            .order_by("travel_date")
+        )
         user_id = self.request.query_params.get("user_id")
         status = self.request.query_params.get("status")
         trip_id = self.request.query_params.get("trip_id")

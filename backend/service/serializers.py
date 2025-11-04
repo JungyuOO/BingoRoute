@@ -40,10 +40,31 @@ def _generate_title(user_id: str) -> str:
     return f"untitled-{count}"
 
 
+class UserTourItineraryReadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MemberTripItinerary
+        fields = ['itinerary_id', 'trip_id', 'seq', 'content_id', 'visit_date', 'stay_time']
+
+
 class UserTourPlanReadSerializer(serializers.ModelSerializer):
+    itineraries = UserTourItineraryReadSerializer(
+        many=True,
+        source='itinerary_set',
+        read_only=True,
+    )
+
     class Meta:
         model = MemberTrip
-        fields = ['trip_id', 'user_id', 'status', 'trip_title', 'travel_date', 'created_at', 'updated_at']
+        fields = [
+            'trip_id',
+            'user_id',
+            'status',
+            'trip_title',
+            'travel_date',
+            'created_at',
+            'updated_at',
+            'itineraries',
+        ]
 
 
 class UserTourPlanCreateSerializer(serializers.ModelSerializer):
@@ -71,12 +92,6 @@ class UserTourPlanUpdateSerializer(serializers.ModelSerializer):
         if title == '':
             validated_data['trip_title'] = _generate_title(instance.user_id)
         return super().update(instance, validated_data)
-
-
-class UserTourItineraryReadSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MemberTripItinerary
-        fields = ['itinerary_id', 'trip_id', 'seq', 'content_id', 'visit_date', 'stay_time']
 
 
 class UserTourItineraryCreateSerializer(serializers.ModelSerializer):
