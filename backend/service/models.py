@@ -81,6 +81,7 @@ class MemberTrip(models.Model):
 
 # 여행별 관광지(여행 일정) 테이블
 class MemberTripItinerary(models.Model):
+    itinerary_id = models.BigAutoField(primary_key=True)
     trip_id = models.ForeignKey(
         MemberTrip,
         db_column='trip_id',
@@ -98,7 +99,7 @@ class MemberTripItinerary(models.Model):
     stay_time = models.DurationField(null=True, blank=True)
 
     def __str__(self):
-        return f'{self.trip.trip_title} - {self.content.title}'
+        return f'{self.trip_id.trip_title} - {self.content.title}'
 
     class Meta:
         db_table = 'member_trip_itinerary'

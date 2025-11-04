@@ -18,7 +18,7 @@ CREATE INDEX IF NOT EXISTS ix_code_table_upper ON code_table (upper_code);
 
 -- 관광지 기본 정보 테이블
 CREATE TABLE IF NOT EXISTS tourist_spot (
-    content_id VARCHAR(20) PRIMARY KEY,
+    content_id VARCHAR(100) PRIMARY KEY,
     title VARCHAR(200) NOT NULL,
     firstimage VARCHAR(500),
     firstimage2 VARCHAR(500),
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS tourist_spot (
 -- 관광지 상세 정보 테이블
 CREATE TABLE IF NOT EXISTS tourist_spot_detail (
     id BIGSERIAL PRIMARY KEY,
-    content_id VARCHAR(20) NOT NULL,
+    content_id VARCHAR(100) NOT NULL,
     address_code VARCHAR(20),
     sigungu_name VARCHAR(100),
     zip_code VARCHAR(20),
@@ -140,12 +140,13 @@ CREATE TABLE IF NOT EXISTS member_trip (
 
 -- 각 여행별 관광지 테이블
 CREATE TABLE IF NOT EXISTS member_trip_itinerary (
-    trip_id    BIGSERIAL        NOT NULL,
-    seq        SMALLINT      NOT NULL,
-    content_id VARCHAR(100)  NOT NULL,
-    visit_date DATE,
-    stay_time  INTERVAL,
-    PRIMARY KEY (trip_id, seq),
+    itinerary_id BIGSERIAL       PRIMARY KEY,
+    trip_id      BIGINT          NOT NULL,
+    seq          SMALLINT        NOT NULL,
+    content_id   VARCHAR(100)    NOT NULL,
+    visit_date   DATE,
+    stay_time    INTERVAL,
+    CONSTRAINT uq_member_trip_itinerary_trip_seq UNIQUE (trip_id, seq),
     CONSTRAINT fk_itinerary_trip
         FOREIGN KEY (trip_id)
         REFERENCES member_trip(trip_id)

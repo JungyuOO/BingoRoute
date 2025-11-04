@@ -17,7 +17,7 @@ urlpatterns = [
     path('user/tour_plans/', UserTourPlanView.as_view(), name='user-tour-plans'),
     path('user/tour_plans/<str:user_id>/trip/<int:trip_id>/', UserTourPlanManageView.as_view(), name='user-tour-plan-detail'),
     path('user/tour_itineraries/', UserTourItineraryView.as_view(), name='user-tour-itineraries'),
-    path('user/tour_itineraries/trip/<int:trip_id>/seq/<int:seq>/', UserTourItineraryManageView.as_view(), name='user-tour-itinerary-detail'),
+    path('user/tour_itineraries/<int:itinerary_id>/', UserTourItineraryManageView.as_view(), name='user-tour-itinerary-detail'),
     
     path('user/jjim/', UserJjimView.as_view(), name='user-jjim'),
   
