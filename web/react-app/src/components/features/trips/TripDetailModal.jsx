@@ -5,6 +5,7 @@ import './TripDetailModal.css'
 import '../destinations/DestinationDetailModal.css'
 
 import { DESTINATIONS } from '../../../data/destinations'
+import { fetchTouristSpotDetail } from '../../../services/touristService'
 
 const TripDetailModal = ({ trip, isOpen, onClose, resolveDestination }) => {
   const findDestination = useCallback((idOrName) => {
@@ -50,9 +51,62 @@ const TripDetailModal = ({ trip, isOpen, onClose, resolveDestination }) => {
   const prev = useCallback(() => setIndex(i => (i > 0 ? i - 1 : i)), [])
   const next = useCallback(() => setIndex(i => (i < steps.length - 1 ? i + 1 : i)), [steps.length])
 
+  const [detail, setDetail] = useState(null)
+  const [detailLoading, setDetailLoading] = useState(false)
+  const [detailError, setDetailError] = useState(null)
+  const [detailReloadKey, setDetailReloadKey] = useState(0)
+
+  const current = steps[index] || null
+  const currentId = current?.id || current?.raw?.content_id || null
+  const canRequestDetail = !!currentId && !Number.isNaN(Number(currentId))
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    if (!canRequestDetail) {
+      setDetail(null)
+      setDetailError(null)
+      setDetailLoading(false)
+      return
+    }
+
+    let cancelled = false
+
+    setDetail(null)
+    setDetailError(null)
+    setDetailLoading(true)
+
+    fetchTouristSpotDetail(currentId)
+      .then((detailData) => {
+        if (!cancelled) {
+          setDetail(detailData)
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error('여행 상세 정보를 불러오지 못했습니다:', error)
+          setDetailError(error.message || '상세 정보를 불러오는 중 문제가 발생했습니다.')
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setDetailLoading(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [isOpen, canRequestDetail, currentId, detailReloadKey])
+
+  const handleRetryDetail = useCallback(() => {
+    if (!canRequestDetail) return
+    setDetailReloadKey((key) => key + 1)
+  }, [canRequestDetail])
+
   if (!isOpen || typeof document === 'undefined') return null
 
-  const current = steps[index]
+  const destination = current
 
   return createPortal(
     <div className="destination-modal__backdrop" onClick={onClose}>
@@ -80,55 +134,72 @@ const TripDetailModal = ({ trip, isOpen, onClose, resolveDestination }) => {
               <div className="modal-hero">
                 <div className="modal-hero__tags">
                   <span className="modal-tag">{index + 1} / {steps.length}</span>
-                  {current?.tags?.map(tag => (
+                  {destination?.tags?.map(tag => (
                     <span key={tag} className="modal-tag">{tag}</span>
                   ))}
                 </div>
-                <h2 className="modal-hero__title">{current?.name}</h2>
-                <p className="modal-hero__meta">📍{current?.area} · ⭐ {current?.rating}</p>
+                <h2 className="modal-hero__title">{destination?.name}</h2>
+                <p className="modal-hero__meta">📍{destination?.area} · ⭐ {destination?.rating}</p>
               </div>
 
-              {/* 상세정보 부분 */}
+              {/* 상세정보 부분 : DestinationModal과 동일하게 적용*/}
               <div className="modal-section">
                 <h3>상세 정보</h3>
-                <p>{current?.long || current?.short}</p>
+                {detailLoading ? (
+                  <p>상세 정보를 불러오는 중입니다...</p>
+                ) : detailError ? (
+                  <div>
+                    <p style={{ color: 'red', marginBottom: '8px' }}>{detailError}</p>
+                    {canRequestDetail && (
+                      <Button variant="ghost" onClick={handleRetryDetail}>
+                        다시 시도
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <p>{detail?.description || destination?.long || destination?.short}</p>
+                )}
               </div>
 
-              {/* 모달창 방문정보 부분*/}
+              {/* 모달창 방문정보 부분 : DestinationModal과 동일하게 적용*/}
               <div className="modal-section">
                 <h3>방문 정보</h3>
                 <div className="modal-info-grid">
                   <div>
+                    <strong>주소</strong>
+                    <p>{detail?.address || destination?.area || '정보 없음'}</p>
+                  </div>
+                  <div>
                     <strong>전화번호</strong>
-                    <p>{current?.phone || '정보 없음'}</p>
+                    <p>{detail?.tel || '정보 없음'}</p>
                   </div>
                   <div>
                     <strong>휴무일</strong>
-                    <p>{current?.closedDays || '정보 없음'}</p>
+                    <p>{detail?.restdate || '정보 없음'}</p>
                   </div>
                   <div>
                     <strong>운영시간</strong>
-                    <p>{current?.operatingHours || '정보 없음'}</p>
+                    <p>{detail?.usetime || '정보 없음'}</p>
                   </div>
                   <div>
                     <strong>운영계절</strong>
-                    <p>{current?.operatingSeason || '정보 없음'}</p>
+                    <p>{detail?.useseason || '정보 없음'}</p>
                   </div>
                   <div>
                     <strong>주차장</strong>
-                    <p>{current?.parking ? '이용 가능' : '이용 불가'}</p>
+                    <p>{detail?.facilities?.parking ? '이용 가능' : '이용 불가'}</p>
                   </div>
                   <div>
                     <strong>유모차</strong>
-                    <p>{current?.strollerFriendly ? '이용 가능' : '이용 불가'}</p>
+                    <p>{detail?.facilities?.babyCarriage ? '이용 가능' : '이용 불가'}</p>
                   </div>
                   <div>
                     <strong>반려동물 입장</strong>
-                    <p>{current?.petFriendly ? '입장 가능' : '입장 불가'}</p>
+                    <p>{detail?.facilities?.pet ? '입장 가능' : '입장 불가'}</p>
                   </div>
                   <div>
                     <strong>신용카드</strong>
-                    <p>{current?.creditCard ? '사용 가능' : '사용 불가'}</p>
+                    <p>{detail?.facilities?.creditCard ? '사용 가능' : '사용 불가'}</p>
                   </div>
                 </div>
               </div>
