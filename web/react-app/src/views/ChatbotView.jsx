@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from 'react'
 import { ChatHeader, ChatMessage, QuickReplies, ChatInput } from '../components/features/chat'
 import './ChatbotView.css'
 import DestinationDetailModal from "../components/features/destinations/DestinationDetailModal";
-const API_BASE = import.meta.env.VITE_API_BASE || '' // e.g., 'http://localhost:8000'
+// 백엔드 API 기본 주소: .env의 VITE_API_BASE가 없으면 로컬 백엔드로 기본
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
 
 
 const INITIAL_CHIPS = [
@@ -288,7 +289,8 @@ const ChatbotView = () => {
     // 날씨
     if (askWeather) {
       try {
-        const w = await requestJson(`${API_BASE}/api/weather/current/`)
+        // 백엔드 라우팅(/api/service/weather/current/)에 맞춰 엔드포인트 수정
+        const w = await requestJson(`${API_BASE}/api/service/weather/current/`)
         const summary = w?.summary || w?.data?.summary || '날씨 정보를 가져오지 못했어요.'
         pushMessage('assistant', <span>{summary}</span>)
       } catch (e) {
