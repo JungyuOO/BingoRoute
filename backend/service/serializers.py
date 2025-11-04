@@ -73,7 +73,7 @@ class UserTourPlanUpdateSerializer(serializers.ModelSerializer):
 class UserTourItineraryReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = MemberTripItinerary
-        fields = ['trip_id', 'seq', 'content_id', 'visit_date', 'stay_time']
+        fields = ['itinerary_id', 'trip_id', 'seq', 'content_id', 'visit_date', 'stay_time']
 
 
 class UserTourItineraryCreateSerializer(serializers.ModelSerializer):
