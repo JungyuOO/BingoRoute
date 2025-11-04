@@ -8,6 +8,7 @@ import {
   createItinerary,
   deleteItinerary,
 } from '../services/tripService'
+import { validateSession } from '../services/authService'
 
 const StoreContext = createContext()
 
@@ -330,6 +331,51 @@ export const StoreProvider = ({ children }) => {
     setSession(storedSession)
     setWishlist(JSON.parse(localStorage.getItem('br_wishlist') || '[]'))
     setStorageHydrated(true)
+    let cancelled = false
+
+    const hydrateFromStorage = async () => {
+      const storedUsers = JSON.parse(localStorage.getItem('br_users') || '[]')
+      const storedWishlist = JSON.parse(localStorage.getItem('br_wishlist') || '[]')
+      const storedTrips = JSON.parse(localStorage.getItem('br_trips') || '[]')
+      const storedSession = JSON.parse(localStorage.getItem('br_session') || 'null')
+
+      if (!cancelled) {
+        setUsers(storedUsers)
+        setWishlist(storedWishlist)
+        setTrips(storedTrips)
+      }
+
+      if (storedSession?.access) {
+        try {
+          const data = await validateSession(storedSession.access)
+          if (!cancelled) {
+            setSession({ ...data.user, access: storedSession.access })
+          }
+        } catch (error) {
+          if (cancelled) return
+          if (error?.status === 401) {
+            console.warn('Stored session is no longer valid. Clearing it.', error)
+            setSession(null)
+            localStorage.removeItem('br_session')
+          } else {
+            console.warn('Unable to verify stored session. Keeping cached session for now.', error)
+            setSession(storedSession)
+          }
+        }
+      } else if (!cancelled) {
+        setSession(storedSession)
+      }
+
+      if (!cancelled) {
+        setStorageHydrated(true)
+      }
+    }
+
+    hydrateFromStorage()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   useEffect(() => {
