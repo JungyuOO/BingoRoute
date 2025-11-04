@@ -1,7 +1,8 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { ChatHeader, ChatMessage, QuickReplies, ChatInput } from '../components/features/chat'
 import './ChatbotView.css'
 import DestinationDetailModal from "../components/features/destinations/DestinationDetailModal";
+import { fetchTouristSpotDetail, normalizeTouristSpot } from '../services/touristService'
 // 백엔드 API 기본 주소: .env의 VITE_API_BASE가 없으면 로컬 백엔드로 기본
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
 
@@ -74,38 +75,30 @@ const fetchTouristSpots = async (categoryQuery) => {
   }
 
 const buildCards = (spots, intro) => {
-  const cards = spots.slice(0, 8).map((s) => ({
-    id: s.content_id,
-    contentId: s.content_id,
-    name: s.title,
-    image: s.firstimage || s.firstimage2 || FALLBACK_IMAGE,
-    desc: intro || (s.category_name || ''),
-  }))
-  return cards
-}
-
-// 상세 정보 보강 유틸
-const toBool = (v) => {
-  if (v === true) return true
-  if (v === false) return false
-  if (v == null) return false
-  const s = String(v).trim().toLowerCase()
-  if (!s) return false
-  if (['0', 'n', 'no', 'false', '불가', '없음'].some(t => s === t || s.includes(t))) return false
-  return ['1', 'y', 'yes', 'true', '가능', 'o', 'ok'].some(t => s === t || s.includes(t))
-}
-
-const fetchSpotDetail = async (contentId) => {
-  const data = await requestJson(`${API_BASE}/api/service/tourist_spots/detail/${contentId}/`)
-  return Array.isArray(data) ? data : Array.isArray(data?.results) ? data.results : []
+  return spots
+    .slice(0, 8)
+    .map((spot) => {
+      const normalized = normalizeTouristSpot(spot)
+      if (!normalized) return null
+      return {
+        ...normalized,
+        contentId: normalized.id,
+        image: normalized.image || FALLBACK_IMAGE,
+        previewText: intro || normalized.short,
+      }
+    })
+    .filter(Boolean)
 }
 
 const ChatbotView = () => {
   const [messages, setMessages] = useState([{ id: 1, role: 'assistant', content: systemGreeting }])
   const [chips, setChips] = useState(INITIAL_CHIPS)
   const [selectedDestination, setSelectedDestination] = useState(null)
+  const [destinationDetail, setDestinationDetail] = useState(null)
+  const [destinationDetailLoading, setDestinationDetailLoading] = useState(false)
+  const [destinationDetailError, setDestinationDetailError] = useState(null)
 
-
+  const activeDetailIdRef = useRef(null)
   const pushMessage = (role, content, cards = null) => {
     const messageId = Date.now() + Math.random()
     setMessages((prev) => [...prev, { id: messageId, role, content, cards }])
@@ -114,58 +107,63 @@ const ChatbotView = () => {
   // 상세 캐시
   const [detailCache, setDetailCache] = useState({})
 
-  const handleCardClick = async (card) => {
-    // 기본 카드 데이터로 먼저 모달 오픈
-    const base = {
-      ...card,
-      tags: [],
-      area: '',
-      rating: '-',
-      long: '',
-      phone: '',
-      closedDays: '',
-      operatingHours: '',
-      operatingSeason: '',
-      parking: false,
-      strollerFriendly: false,
-      petFriendly: false,
-      creditCard: false,
-    }
+  const loadDestinationDetail = useCallback(async (contentId) => {
+    if (!contentId) return
+    activeDetailIdRef.current = contentId
 
-    if (detailCache[card.contentId || card.id]) {
-      setSelectedDestination(detailCache[card.contentId || card.id])
+    if (detailCache[contentId]) {
+      setDestinationDetail(detailCache[contentId])
+      setDestinationDetailError(null)
+      setDestinationDetailLoading(false)
       return
     }
-    setSelectedDestination(base)
+
+    setDestinationDetail(null)
+    setDestinationDetailError(null)
+    setDestinationDetailLoading(true)
 
     try {
-      const list = await fetchSpotDetail(card.contentId || card.id)
-      if (!Array.isArray(list) || list.length === 0) return
-
-      const first = list[0]
-      const tags = Array.from(new Set(list.map(d => d.info_name).filter(Boolean)))
-      const infoTexts = list.map(d => (d.info_text || '').trim()).filter(Boolean)
-
-      const enriched = {
-        ...base,
-        tags,
-        area: first?.sigungu_name || base.area,
-        long: infoTexts.length ? infoTexts.join('\n\n') : base.long,
-        phone: first?.tel || base.phone,
-        closedDays: first?.restdate || base.closedDays,
-        operatingHours: first?.usetime || base.operatingHours,
-        operatingSeason: first?.useseason || base.operatingSeason,
-        parking: first?.is_parking != null ? toBool(first.is_parking) : base.parking,
-        strollerFriendly: first?.is_baby_carriage != null ? toBool(first.is_baby_carriage) : base.strollerFriendly,
-        petFriendly: first?.is_pet != null ? toBool(first.is_pet) : base.petFriendly,
-        creditCard: first?.is_credit_card != null ? toBool(first.is_credit_card) : base.creditCard,
+      const detail = await fetchTouristSpotDetail(contentId)
+      setDetailCache((prev) => ({ ...prev, [contentId]: detail }))
+      if (activeDetailIdRef.current === contentId) {
+        setDestinationDetail(detail)
+        setDestinationDetailError(null)
       }
-      setDetailCache(prev => ({ ...prev, [card.contentId || card.id]: enriched }))
-      setSelectedDestination(enriched)
-    } catch (e) {
-      console.error('detail fetch error', e)
+    } catch (error) {
+      console.error('detail fetch error', error)
+      if (activeDetailIdRef.current === contentId) {
+        setDestinationDetailError(error.message || '상세 정보를 불러오는 중 문제가 발생했습니다.')
+      }
+    } finally {
+      if (activeDetailIdRef.current === contentId) {
+        setDestinationDetailLoading(false)
+      }
     }
+  }, [detailCache])
+
+  const handleCardClick = async (card) => {
+    const base = {
+      ...card,
+      tags: card.tags || [],
+    }
+    setSelectedDestination(base)
+    const contentId = card.contentId || card.id
+    await loadDestinationDetail(contentId)
   }
+
+  const handleRetryDetail = useCallback(() => {
+    const contentId = selectedDestination?.contentId || selectedDestination?.id
+    if (!contentId) return
+    loadDestinationDetail(contentId)
+  }, [loadDestinationDetail, selectedDestination])
+
+  const handleCloseDestination = useCallback(() => {
+    setSelectedDestination(null)
+    setDestinationDetail(null)
+    setDestinationDetailError(null)
+    setDestinationDetailLoading(false)
+    activeDetailIdRef.current = null
+  }, [])
 
   // 스크롤 기반 카드 컴포넌트
   const ScrollableCards = ({ cards, messageId }) => {
@@ -231,7 +229,7 @@ const ChatbotView = () => {
               <img src={card.image} alt={card.name} className="tour-image" />
               <div className="tour-info">
                 <h4>{card.name}</h4>
-                <p>{card.desc}</p>
+                <p>{card.previewText}</p>
               </div>
             </div>
           ))}
@@ -341,9 +339,13 @@ const ChatbotView = () => {
           <DestinationDetailModal
             destination={selectedDestination}
             isOpen={!!selectedDestination}
-            onClose={() => setSelectedDestination(null)}
+            onClose={handleCloseDestination}
             isSaved={false}
             onToggleSave={() => console.log('찜하기 눌림')}
+            detail={destinationDetail}
+            detailLoading={destinationDetailLoading}
+            detailError={destinationDetailError}
+            onRetryDetail={handleRetryDetail}
           />
         )}
       </div>
