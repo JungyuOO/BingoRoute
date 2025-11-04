@@ -20,6 +20,14 @@ const DestinationDetailModal = ({
   const [showPlanModal, setShowPlanModal] = useState(false)
   const { addDestinationToTrip, trips } = useStore()
 
+  // 🔹 시설 이용 가능 여부 판단 함수 (원본 데이터 기반)
+  const getFacilityStatus = (facilityValue, rawData, fieldName) => {
+    // raw 데이터에서 직접 확인
+    const rawValue = rawData?.[0]?.[fieldName];
+    if (rawValue === null || rawValue === undefined) return '정보 없음';
+    return rawValue === "1" || rawValue === 1 ? '이용 가능' : '이용 불가';
+  };
+
   // 🔹 로그인 안 돼있으면 로그인 유도
   const handlePlannerAdd = () => {
     if (!isAuthenticated) {
@@ -113,10 +121,10 @@ const DestinationDetailModal = ({
                 <div><strong>휴무일</strong><p>{detail?.restdate || '정보 없음'}</p></div>
                 <div><strong>운영시간</strong><p>{detail?.usetime || '정보 없음'}</p></div>
                 <div><strong>운영계절</strong><p>{detail?.useseason || '정보 없음'}</p></div>
-                <div><strong>주차장</strong><p>{detail?.facilities?.parking ? '이용 가능' : '이용 불가'}</p></div>
-                <div><strong>유모차</strong><p>{detail?.facilities?.babyCarriage ? '이용 가능' : '이용 불가'}</p></div>
-                <div><strong>반려동물 입장</strong><p>{detail?.facilities?.pet ? '입장 가능' : '입장 불가'}</p></div>
-                <div><strong>신용카드</strong><p>{detail?.facilities?.creditCard ? '사용 가능' : '사용 불가'}</p></div>
+                <div><strong>주차장</strong><p>{getFacilityStatus(detail?.facilities?.parking, detail?.raw, 'is_parking')}</p></div>
+                <div><strong>유모차</strong><p>{getFacilityStatus(detail?.facilities?.babyCarriage, detail?.raw, 'is_baby_carriage')}</p></div>
+                <div><strong>반려동물 입장</strong><p>{getFacilityStatus(detail?.facilities?.pet, detail?.raw, 'is_pet')}</p></div>
+                <div><strong>신용카드</strong><p>{getFacilityStatus(detail?.facilities?.creditCard, detail?.raw, 'is_credit_card')}</p></div>
               </div>
             </div>
 
