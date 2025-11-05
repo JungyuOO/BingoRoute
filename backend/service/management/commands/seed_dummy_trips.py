@@ -1,8 +1,9 @@
 import datetime
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
+from django.db.models import Max
 from django.utils import timezone
+
 from accounts.models import CustomUser
-from django.core.management.base import CommandError
 from service.models import MemberTrip, MemberTripItinerary, TouristSpot
 
 
@@ -25,20 +26,34 @@ class Command(BaseCommand):
         ]
 
         created_users = []
+        next_numeric_id = (CustomUser.objects.aggregate(max_id=Max("id")).get("max_id") or 0)
+
         for info in users:
-            user, created = CustomUser.objects.get_or_create(
-                user_id=info["user_id"],
-                defaults={
-                    "username": info["user_id"],
-                    "email": info["email"],
-                    "first_name": info["first_name"],
-                    "is_active": True,
-                },
+            user = CustomUser.objects.filter(user_id=info["user_id"]).first()
+            if user:
+                created_users.append(user)
+                continue
+
+            next_numeric_id += 1
+            temp_user_id = str(next_numeric_id)
+
+            user = CustomUser(
+                user_id=temp_user_id,
+                username=info["user_id"],
+                email=info["email"],
+                first_name=info["first_name"],
+                is_active=True,
             )
-            if created:
-                user.set_password("password123!")
-                user.save(update_fields=["password"])
+            user.set_password("password123!")
+            user.save()
+
+            CustomUser.objects.filter(pk=user.pk).update(
+                user_id=info["user_id"],
+                username=info["user_id"],
+            )
+            user.refresh_from_db()
             created_users.append(user)
+
         self.stdout.write(self.style.SUCCESS(f"Users ready: {[u.user_id for u in created_users]}"))
 
         self.stdout.write(self.style.MIGRATE_HEADING("Selecting tourist spots"))

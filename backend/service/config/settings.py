@@ -156,6 +156,9 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
     ],
@@ -199,5 +202,6 @@ SPECTACULAR_SETTINGS = {
         {'name': '관광지', 'description': '관광지 정보 조회 및 관리'},
         {'name': '찜하기', 'description': '관광지 찜하기 기능'},
         {'name': '여행계획', 'description': '여행 계획 생성 및 관리'},
+        {'name': '날씨', 'description': '현재 날씨 불러오기'},
     ],
 }

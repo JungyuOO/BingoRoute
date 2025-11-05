@@ -2,7 +2,20 @@ import './WeatherSection.css'
 import WeatherSelector from './WeatherSelector'
 import WeatherDisplay from './WeatherDisplay'
 
-const WeatherSection = ({ loading, districts = [], selectedDistrict, onChangeDistrict, currentWeather }) => {
+const WeatherSection = ({
+  loading,
+  districts = [],
+  selectedDistrict,
+  onChangeDistrict,
+  currentWeather,
+  meta = null
+}) => {
+  const isoDate = meta?.forecastDateISO
+  const metaText =
+    meta?.displayDate && meta?.displayTime
+      ? `📅 ${meta.displayDate}${isoDate ? ` (${isoDate})` : ''} ${meta.displayTime} 예보`
+      : null
+
   return (
     <div className="section">
       <div className="panel">
@@ -15,6 +28,11 @@ const WeatherSection = ({ loading, districts = [], selectedDistrict, onChangeDis
             loading={loading}
           />
         </div>
+        {metaText && (
+          <div className="muted">
+            {metaText}
+          </div>
+        )}
         <WeatherDisplay
           currentWeather={currentWeather}
           selectedDistrict={selectedDistrict}

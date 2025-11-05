@@ -34,27 +34,38 @@ const DestinationDetailModal = ({
   const handleContentClick = (event) => event.stopPropagation()
 
   // 🔹 여행계획 선택 시 실행
-  const handleSelectPlan = (planId) => {
+  const handleSelectPlan = async (planId) => {
     const selectedPlan = trips.find(p => p.id === Number(planId))
     if (!selectedPlan) return alert('선택한 여행 계획을 찾을 수 없습니다.')
 
-    addDestinationToTrip(selectedPlan.title, destination.name)
-    alert(`"${selectedPlan.title}" 여행 계획에 "${destination.name}"이(가) 추가되었습니다!`)
-    setShowPlanModal(false)
+    try {
+      await addDestinationToTrip({ tripId: selectedPlan.id, destination })
+      alert(`"${selectedPlan.title}" 여행 계획에 "${destination.name}"이(가) 추가되었습니다!`)
+      setShowPlanModal(false)
+    } catch (error) {
+      console.error('여행 계획에 추가하지 못했습니다:', error)
+      alert('여행 계획에 추가하지 못했습니다. 잠시 후 다시 시도해주세요.')
+    }
   }
 
   // 🔹 새 여행 계획 생성
-  const handleCreateNewPlan = () => {
+  const handleCreateNewPlan = async () => {
     const title = prompt('새 여행 계획의 이름을 입력하세요 ✏️')
     if (!title) return
-    addDestinationToTrip(title, destination.name)
-    alert(`"${title}" 여행 계획이 생성되고 "${destination.name}"이(가) 추가되었습니다!`)
-    setShowPlanModal(false)
-    onClose()
+    try {
+      await addDestinationToTrip({ tripTitle: title, destination })
+      alert(`"${title}" 여행 계획이 생성되고 "${destination.name}"이(가) 추가되었습니다!`)
+      setShowPlanModal(false)
+      onClose()
+    } catch (error) {
+      console.error('새 여행 계획을 생성하지 못했습니다:', error)
+      alert('새 여행 계획을 만들지 못했습니다. 잠시 후 다시 시도해주세요.')
+    }
   }
 
   if (!isOpen || typeof document === 'undefined') return null
   const modalRoot = document.getElementById('modal-root') || document.body
+  const heroImage = destination?.raw?.firstimage || destination?.raw?.firstimage2 || destination?.image || null
 
   return createPortal(
     (
@@ -75,6 +86,16 @@ const DestinationDetailModal = ({
           </div>
 
           <div className="destination-modal__content">
+            {heroImage && (
+              <div className="modal-hero-image">
+                <img
+                  src={heroImage}
+                  alt={destination?.name ? `${destination.name} 대표 이미지` : '관광지 이미지'}
+                  className="modal-hero-image__img"
+                  loading="lazy"
+                />
+              </div>
+            )}
             <div className="modal-hero">
               <div className="modal-hero__tags">
                 {destination.tags?.map(tag => (
