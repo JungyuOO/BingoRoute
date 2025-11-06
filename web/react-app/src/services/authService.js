@@ -1,5 +1,23 @@
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
 
+function extractErrorMessage(data, fallback) {
+  if (!data) return fallback
+  if (typeof data.detail === 'string') return data.detail
+
+  const nonFieldErrors = data.non_field_errors
+  if (Array.isArray(nonFieldErrors) && nonFieldErrors.length > 0) {
+    return typeof nonFieldErrors[0] === 'string' ? nonFieldErrors[0] : fallback
+  }
+
+  const firstValue = Object.values(data)[0]
+  if (Array.isArray(firstValue) && firstValue.length > 0) {
+    return typeof firstValue[0] === 'string' ? firstValue[0] : fallback
+  }
+  if (typeof firstValue === 'string') return firstValue
+
+  return fallback
+}
+
 export async function signup({ user_id, name, email, password, confirm_password, birth_date, gender }) {
   const res = await fetch(`${API_BASE}/api/auth/signup/`, {
     method: 'POST',
@@ -49,6 +67,50 @@ export async function verifyEmailCode(email, code) {
   })
   const data = await res.json()
   if (!res.ok) throw new Error(data.detail || '인증 실패')
+  return data
+}
+
+export async function findUserId({ name, email }) {
+  const res = await fetch(`${API_BASE}/api/auth/find-id/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, email }),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(extractErrorMessage(data, '아이디 조회에 실패했습니다.'))
+  return data
+}
+
+export async function requestPasswordResetCode({ user_id, name, email }) {
+  const res = await fetch(`${API_BASE}/api/auth/password-reset/send-code/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id, name, email }),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(extractErrorMessage(data, '인증 코드 발송에 실패했습니다.'))
+  return data
+}
+
+export async function verifyPasswordResetCode({ user_id, email, code }) {
+  const res = await fetch(`${API_BASE}/api/auth/password-reset/verify-code/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id, email, code }),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(extractErrorMessage(data, '인증 코드 확인에 실패했습니다.'))
+  return data
+}
+
+export async function resetPassword({ user_id, email, code, new_password, confirm_password }) {
+  const res = await fetch(`${API_BASE}/api/auth/password-reset/confirm/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id, email, code, new_password, confirm_password }),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(extractErrorMessage(data, '비밀번호 재설정에 실패했습니다.'))
   return data
 }
 

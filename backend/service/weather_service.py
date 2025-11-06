@@ -40,7 +40,7 @@ class WeatherService:
         "wind_speed": "정보없음",
         "precipitation": "정보없음",
     }
-    FORECAST_SLOTS: Sequence[int] = (0, 3, 6, 9, 12, 15, 18, 21)
+    FORECAST_SLOTS: Sequence[int] = tuple(range(24))
 
     @classmethod
     def get_short_forecast_summary(
