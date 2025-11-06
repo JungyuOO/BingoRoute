@@ -7,7 +7,7 @@ import { useStore } from '../context/StoreContext'
 import { fetchTouristSpots } from '../services/touristService'
 
 const MyPageView = () => {
-  const { session, setSession, wishlist, trips, removeDestinationFromTrip, deleteTrip, mergeTrips, updateTrip, replanTrip } = useStore()
+  const { session, setSession, wishlist, trips, tripsLoading, tripError, removeDestinationFromTrip, deleteTrip, mergeTrips, updateTrip, replanTrip } = useStore()
   const [isEditing, setIsEditing] = useState(false)
   const [isTripModalOpen, setIsTripModalOpen] = useState(false)
   const [selectedTrip, setSelectedTrip] = useState(null)
@@ -26,7 +26,7 @@ const MyPageView = () => {
     const ids = new Set()
     ;(wishlist || []).forEach(id => ids.add(String(id)))
     ;(trips || []).forEach(trip => {
-      (trip.destinations || trip.routes || []).forEach(id => ids.add(String(id)))
+      (trip.destinations || []).forEach(id => ids.add(String(id)))
     })
     return Array.from(ids)
   }, [wishlist, trips])
@@ -228,9 +228,9 @@ const MyPageView = () => {
 
   // 여행계획 공유하기 -> 해당 여행계획의 url이 복사됨.
   const shareTrip = async (trip) => {
-    const names = (trip.destinations || trip.routes || []).map(d => {
-      const match = resolveDestination(d)
-      return match?.name || d
+    const names = (trip.itineraries || []).map(({ content_id: contentId }) => {
+      const match = resolveDestination(contentId)
+      return match?.name || contentId
     })
     const text = `여행 계획: ${trip.title}\n기간: ${formatDateRange(trip)}\n경로: ${names.join(' > ')}`
     const url = `${window.location.origin}/mypage?trip=${encodeURIComponent(trip.id)}`
@@ -386,7 +386,15 @@ const MyPageView = () => {
         {/* 여행계획 리스트부분! 
         (버튼형식이라 클릭하면 여행경로 및 세부정보 모달창이 뜨도록 설계됨) */}
 
-        {trips.length > 0 ? (
+        {tripError ? (
+          <div className="center">
+            <p className="muted" style={{ color: 'red' }}>{tripError.message || '여행 계획을 불러오지 못했습니다.'}</p>
+          </div>
+        ) : tripsLoading ? (
+          <div className="center">
+            <p className="muted">여행 계획을 불러오는 중입니다...</p>
+          </div>
+        ) : trips.length > 0 ? (
           <div className="trip-list">
             {trips
               .slice()
@@ -431,19 +439,19 @@ const MyPageView = () => {
                   </div>
                   <div className="trip-button-content">
                     <div className="trip-destinations">
-                      {(trip.destinations || trip.routes || []).length > 0 ? (
-                        (trip.destinations || trip.routes).map((d, i) => {
-                          const dest = resolveDestination(d)
+                      {(trip.itineraries || []).length > 0 ? (
+                        (trip.itineraries || []).map((itinerary, i) => {
+                          const dest = resolveDestination(itinerary.content_id)
                           return (
-                            <span key={`${d}-${i}`} className="destination-tag destination-tag-editable">
-                              {dest?.name || d}
+                            <span key={`${itinerary.content_id}-${itinerary.seq}-${i}`} className="destination-tag destination-tag-editable">
+                              {dest?.name || itinerary.content_id}
                               {editingTripId === trip.id && (
                                 <button
                                   className="btn-cancel destination-remove-btn"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     e.preventDefault();
-                                    removeDestinationFromTrip(trip.id, d)
+                                    removeDestinationFromTrip(trip.id, itinerary.seq)
                                   }}
                                 >
                                   ×

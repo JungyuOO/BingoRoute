@@ -3,6 +3,7 @@ import { weatherService } from '../../services/weatherService'
 
 export const useWeather = () => {
   const [weatherData, setWeatherData] = useState({})
+  const [weatherMeta, setWeatherMeta] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -13,7 +14,8 @@ export const useWeather = () => {
       const currentWeather = await weatherService.getCurrentWeather()
       if (currentWeather) {
         const formattedData = weatherService.formatSeoulWeatherData(currentWeather)
-        setWeatherData(formattedData)
+        setWeatherData(formattedData.regions)
+        setWeatherMeta(formattedData.meta)
       }
     } catch (err) {
       console.error('날씨 데이터 로드 실패:', err)
@@ -29,6 +31,7 @@ export const useWeather = () => {
 
   return {
     weatherData,
+    weatherMeta,
     loading,
     error,
     refetch: loadWeatherData

@@ -12,6 +12,7 @@ from .serializers import (
     UserTourItineraryUpdateSerializer,
 )
 
+from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 
 import logging
@@ -55,7 +56,15 @@ class UserTourPlanView(generics.ListCreateAPIView):
     serializer_class = UserTourPlanReadSerializer
 
     def get_queryset(self):
-        qs = MemberTrip.objects.all().order_by("travel_date")
+        itinerary_prefetch = Prefetch(
+            "itinerary_set",
+            queryset=MemberTripItinerary.objects.order_by("seq"),
+        )
+        qs = (
+            MemberTrip.objects.all()
+            .prefetch_related(itinerary_prefetch)
+            .order_by("travel_date")
+        )
         user_id = self.request.query_params.get("user_id")
         status = self.request.query_params.get("status")
         trip_id = self.request.query_params.get("trip_id")
@@ -142,7 +151,12 @@ class UserTourItineraryView(generics.ListCreateAPIView):
             raise ValidationError({"trip_id": "trip_id는 필수입니다."})
         serializer.context['trip_id'] = trip_id
         instance = serializer.save()
-        logger.info("UserTourItinerary created: trip_id=%s seq=%s", instance.trip_id_id, instance.seq)
+        logger.info(
+            "UserTourItinerary created: itinerary_id=%s trip_id=%s seq=%s",
+            instance.itinerary_id,
+            instance.trip_id_id,
+            instance.seq,
+        )
 
 
 @extend_schema(
@@ -190,19 +204,18 @@ class UserTourPlanManageView(generics.RetrieveUpdateDestroyAPIView):
 @extend_schema(
     tags=["여행별 관광지"],
     summary="여행별 관광지 단건 조회/수정/삭제",
-    description="trip_id와 seq를 이용해 특정 일정을 조회/수정/삭제합니다.",
+    description="itinerary_id를 이용해 특정 일정을 조회/수정/삭제합니다.",
 )
 class UserTourItineraryManageView(generics.RetrieveUpdateDestroyAPIView):
     """여행 계획에 속한 관광지 단건 조회/수정/삭제"""
 
     serializer_class = UserTourItineraryReadSerializer
-    queryset = MemberTripItinerary.objects.all()
+    queryset = MemberTripItinerary.objects.select_related("trip_id", "content").all()
     http_method_names = ["get", "patch", "delete"]
 
     def get_object(self):
-        trip_id = self.kwargs["trip_id"]
-        seq = self.kwargs["seq"]
-        return get_object_or_404(self.queryset, trip_id=trip_id, seq=seq)
+        itinerary_id = self.kwargs["itinerary_id"]
+        return get_object_or_404(self.queryset, itinerary_id=itinerary_id)
 
     def get_serializer_class(self):
         if self.request.method == "PATCH":
@@ -222,18 +235,16 @@ class UserTourItineraryManageView(generics.RetrieveUpdateDestroyAPIView):
         if changed:
             serializer.save()
             logger.info(
-                "UserTourItinerary updated: trip_id=%s seq=%s changes=%s",
-                instance.trip_id_id,
-                instance.seq,
+                "UserTourItinerary updated: itinerary_id=%s changes=%s",
+                instance.itinerary_id,
                 changed,
             )
         else:
             logger.info(
-                "No changes detected; itinerary update skipped (trip_id=%s, seq=%s)",
-                instance.trip_id_id,
-                instance.seq,
+                "No changes detected; itinerary update skipped (itinerary_id=%s)",
+                instance.itinerary_id,
             )
 
     def perform_destroy(self, instance):
-        logger.info("UserTourItinerary deleted: trip_id=%s seq=%s", instance.trip_id_id, instance.seq)
+        logger.info("UserTourItinerary deleted: itinerary_id=%s", instance.itinerary_id)
         instance.delete()

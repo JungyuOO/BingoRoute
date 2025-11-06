@@ -7,7 +7,7 @@ import { useWeather } from '../hooks/api/useWeather'
 import { fetchTouristSpots } from '../services/touristService'
 
 const HomePage = () => {
-  const { weatherData, loading } = useWeather()
+  const { weatherData, weatherMeta, loading } = useWeather()
   const navigate = useNavigate()
 
   const [destinations, setDestinations] = useState([])
@@ -17,8 +17,9 @@ const HomePage = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [loadMoreError, setLoadMoreError] = useState(null)
 
-  const [filter, setFilter] = useState('')
+
   // 추천 여행지 필터링: 지역/테마
+  const [filter, setFilter] = useState('')
   const [selectedArea, setSelectedArea] = useState('ALL')
   const [selectedTheme, setSelectedTheme] = useState('ALL')
   const [selectedDistrict, setSelectedDistrict] = useState('강남구')
@@ -119,11 +120,17 @@ const HomePage = () => {
     return areaOk && themeOk && qOk
   })
 
-  const currentWeather = weatherData[selectedDistrict] || {
+  const defaultWeather = {
     temp: '정보없음',
     wind: '정보없음',
     sky: '정보없음',
-    advice: '날씨 정보를 불러오는 중입니다...'
+    rainfall: '0',
+    advice: '날씨 정보를 불러오는 중입니다...',
+  }
+
+  const currentWeather = {
+    ...defaultWeather,
+    ...(weatherData[selectedDistrict] || {}),
   }
 
   const districts = Object.keys(weatherData)
@@ -138,6 +145,7 @@ const HomePage = () => {
         selectedDistrict={selectedDistrict}
         onChangeDistrict={setSelectedDistrict}
         currentWeather={currentWeather}
+        meta={weatherMeta}
       />
 
       <div className="section">

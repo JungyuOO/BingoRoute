@@ -46,7 +46,8 @@ class TouristSpotAllView(generics.ListAPIView):
         if content:
             qs = qs.filter(content_id=content)
         if category:
-            qs = qs.filter(category_name=category)
+            # 부분 일치로도 검색되도록 변경
+            qs = qs.filter(category_name__icontains=category)
         return qs
     
 

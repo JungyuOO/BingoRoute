@@ -1,5 +1,5 @@
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import get_user_model
@@ -80,6 +80,39 @@ def login_view(request):
     return Response({
         "access": access,
         "user": UserSerializer(user).data,
+    })
+
+
+@extend_schema(
+    summary="세션 확인",
+    description="전달된 액세스 토큰이 유효한지 확인하고 사용자 정보를 반환합니다.",
+    responses={
+        200: OpenApiExample(
+            'Session Valid',
+            value={
+                "user": {
+                    "id": "testuser123",
+                    "user_id": "testuser123",
+                    "email": "test@example.com",
+                    "name": "홍길동",
+                    "display_name": "홍길동"
+                }
+            },
+            response_only=True
+        ),
+        401: OpenApiExample(
+            'Unauthorized',
+            value={"detail": "자격 증명이 제공되지 않았습니다."},
+            response_only=True
+        )
+    },
+    tags=["회원관리"]
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def session_view(request):
+    return Response({
+        "user": UserSerializer(request.user).data,
     })
 
 
