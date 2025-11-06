@@ -1,15 +1,32 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ROUTES } from '../router/routes'
+import { findUserId } from '../services/authService'
 
 const FindIdView = () => {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const [foundUserId, setFoundUserId] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    setSubmitted(true)
+    setSubmitted(false)
+    setError('')
+    setFoundUserId('')
+    setLoading(true)
+
+    try {
+      const data = await findUserId({ name, email })
+      setFoundUserId(data.user_id)
+    } catch (err) {
+      setError(err.message || '아이디를 찾을 수 없습니다.')
+    } finally {
+      setLoading(false)
+      setSubmitted(true)
+    }
   }
 
   return (
@@ -37,11 +54,19 @@ const FindIdView = () => {
               onChange={(event) => setEmail(event.target.value)}
               required
             />
-            <button type="submit" className="brand-btn">아이디 찾기</button>
+            <button type="submit" className="brand-btn" disabled={loading}>
+              {loading ? '조회 중...' : '아이디 찾기'}
+            </button>
           </form>
           {submitted && (
             <div className="muted" style={{ marginTop: '12px', fontSize: '14px' }}>
-              입력하신 연락처로 아이디 안내 메일을 발송해 드릴게요.
+              {error && <span style={{ color: '#d14343' }}>{error}</span>}
+              {!error && foundUserId && (
+                <>
+                  가입하신 아이디는 <strong>{foundUserId}</strong> 입니다.
+                </>
+              )}
+              {!error && !foundUserId && '입력하신 정보를 다시 확인해주세요.'}
             </div>
           )}
           <div style={{ textAlign: 'center', marginTop: '16px' }}>

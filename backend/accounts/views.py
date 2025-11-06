@@ -3,11 +3,27 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import get_user_model
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
+from drf_spectacular.utils import extend_schema, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
 
-from .serializers import SignupSerializer, UserSerializer, LoginSerializer
-from .utils import generate_verification_code, send_verification_email, store_verification_code, verify_email_code
+from .serializers import (
+    SignupSerializer,
+    UserSerializer,
+    LoginSerializer,
+    FindIDSerializer,
+    PasswordResetRequestSerializer,
+    PasswordResetCodeVerifySerializer,
+    PasswordResetConfirmSerializer,
+)
+from .utils import (
+    generate_verification_code,
+    send_verification_email,
+    store_verification_code,
+    verify_email_code,
+    send_password_reset_email,
+    store_password_reset_code,
+    verify_password_reset_code,
+)
 
 User = get_user_model()
 
@@ -202,3 +218,140 @@ def verify_email_code_view(request):
         return Response({"message": "이메일 인증이 완료되었습니다."}, status=status.HTTP_200_OK)
     else:
         return Response({"detail": "인증 코드가 올바르지 않거나 만료되었습니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(
+    summary="아이디 찾기",
+    description="가입 시 등록한 이름과 이메일로 사용자 ID를 조회합니다.",
+    request=FindIDSerializer,
+    responses={
+        200: OpenApiExample(
+            'Find ID Success',
+            value={"user_id": "testuser123"},
+            response_only=True
+        ),
+        400: OpenApiExample(
+            'Find ID Failed',
+            value={"detail": "입력하신 정보와 일치하는 계정을 찾을 수 없습니다."},
+            response_only=True
+        )
+    },
+    tags=["회원관리"]
+)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def find_id_view(request):
+    serializer = FindIDSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    user = serializer.validated_data["user"]
+    return Response({"user_id": user.user_id}, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    summary="비밀번호 재설정 코드 발송",
+    description="아이디, 이름, 이메일이 일치하는 사용자에게 비밀번호 재설정 인증 코드를 발송합니다.",
+    request=PasswordResetRequestSerializer,
+    responses={
+        200: OpenApiExample(
+            'Password Reset Code Sent',
+            value={"message": "비밀번호 재설정 인증 코드가 발송되었습니다."},
+            response_only=True
+        ),
+        400: OpenApiExample(
+            'Password Reset Code Failed',
+            value={"detail": "입력하신 정보와 일치하는 계정을 찾을 수 없습니다."},
+            response_only=True
+        )
+    },
+    tags=["회원관리"]
+)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def password_reset_send_code(request):
+    serializer = PasswordResetRequestSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    user = serializer.validated_data["user"]
+    code = generate_verification_code()
+
+    if not send_password_reset_email(user.email, code):
+        return Response({"detail": "이메일 발송에 실패했습니다."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    store_password_reset_code(user.user_id, user.email, code)
+    return Response({"message": "비밀번호 재설정 인증 코드가 발송되었습니다."}, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    summary="비밀번호 재설정 코드 확인",
+    description="발송된 인증 코드가 올바른지 확인합니다.",
+    request=PasswordResetCodeVerifySerializer,
+    responses={
+        200: OpenApiExample(
+            'Password Reset Code Verified',
+            value={"message": "인증 코드가 확인되었습니다."},
+            response_only=True
+        ),
+        400: OpenApiExample(
+            'Password Reset Code Verify Failed',
+            value={"detail": "인증 코드가 올바르지 않거나 만료되었습니다."},
+            response_only=True
+        )
+    },
+    tags=["회원관리"]
+)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def password_reset_verify_code(request):
+    serializer = PasswordResetCodeVerifySerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    user = serializer.validated_data["user"]
+    email = serializer.validated_data["email"]
+    code = serializer.validated_data["code"]
+
+    if not verify_password_reset_code(user.user_id, email, code, consume=False):
+        return Response({"detail": "인증 코드가 올바르지 않거나 만료되었습니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response({"message": "인증 코드가 확인되었습니다."}, status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    summary="비밀번호 재설정",
+    description="인증 코드를 검증하고 새 비밀번호를 설정합니다.",
+    request=PasswordResetConfirmSerializer,
+    responses={
+        200: OpenApiExample(
+            'Password Reset Success',
+            value={"message": "비밀번호가 재설정되었습니다."},
+            response_only=True
+        ),
+        400: OpenApiExample(
+            'Password Reset Failed',
+            value={"detail": "인증 코드가 올바르지 않거나 만료되었습니다."},
+            response_only=True
+        )
+    },
+    tags=["회원관리"]
+)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def password_reset_confirm(request):
+    serializer = PasswordResetConfirmSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    user = serializer.validated_data["user"]
+    email = serializer.validated_data["email"]
+    code = serializer.validated_data["code"]
+    new_password = serializer.validated_data["new_password"]
+
+    if not verify_password_reset_code(user.user_id, email, code, consume=True):
+        return Response({"detail": "인증 코드가 올바르지 않거나 만료되었습니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+    user.set_password(new_password)
+    user.save(update_fields=['password'])
+    return Response({"message": "비밀번호가 재설정되었습니다."}, status=status.HTTP_200_OK)
